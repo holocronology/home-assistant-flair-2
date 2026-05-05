@@ -42,6 +42,11 @@ async def async_setup_entry(
             if structure_data.bridges:
                 for bridge_id, bridge_data in structure_data.bridges.items():
                     binary_sensors.append(Connectivity(coordinator, structure_id, bridge_id, 'bridges'))
+            # Puck V2
+            puck2s = getattr(structure_data, 'puck2s', {})
+            if puck2s:
+                for puck2_id in puck2s:
+                    binary_sensors.append(Connectivity(coordinator, structure_id, puck2_id, 'puck2s'))
 
     async_add_entities(binary_sensors)
 
@@ -71,6 +76,8 @@ class Connectivity(CoordinatorEntity, BinarySensorEntity):
             return self.structure_data.pucks[self.device_id]
         elif self.device_type == 'vents':
             return self.structure_data.vents[self.device_id]
+        elif self.device_type == 'puck2s':
+            return self.structure_data.puck2s[self.device_id]
         else:
             return self.structure_data.bridges[self.device_id]
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from flairaio.model import Bridge, Puck, Structure
+from .model import Puck2
 
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -51,6 +52,16 @@ async def async_setup_entry(
             if structure_data.bridges:
                 for bridge_id, bridge_data in structure_data.bridges.items():
                     numbers.append(BridgeLED(coordinator, structure_id, bridge_id))
+
+            # Puck V2
+            puck2s = getattr(structure_data, 'puck2s', {})
+            if puck2s:
+                for puck2_id in puck2s:
+                    numbers.extend((
+                        Puck2LowerLimit(coordinator, structure_id, puck2_id),
+                        Puck2UpperLimit(coordinator, structure_id, puck2_id),
+                        Puck2TempCalibration(coordinator, structure_id, puck2_id),
+                    ))
 
     async_add_entities(numbers)
 
@@ -995,5 +1006,454 @@ class BridgeLED(CoordinatorEntity, NumberEntity):
 
         attributes = {
             "led-brightness": value
+        }
+        return attributes
+
+
+class Puck2LowerLimit(CoordinatorEntity, NumberEntity):
+    """Representation of Puck V2 set point lower limit."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self) -> Puck2:
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_lower_limit'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Set point lower limit"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon."""
+
+        return 'mdi:thermometer'
+
+    @property
+    def native_value(self) -> float | None:
+        """Returns current lower limit."""
+
+        value = self.puck2_data.attributes.get('setpoint-bound-low')
+        if value is None:
+            return None
+        if self.hass.config.units is METRIC_SYSTEM:
+            return value
+        else:
+            return round(((value * (9/5)) + 32), 0)
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfTemperature:
+        """Return celsius or fahrenheit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return UnitOfTemperature.CELSIUS
+        else:
+            return UnitOfTemperature.FAHRENHEIT
+
+    @property
+    def device_class(self) -> NumberDeviceClass:
+        """Return temp device class."""
+
+        return NumberDeviceClass.TEMPERATURE
+
+    @property
+    def mode(self) -> NumberMode:
+        """Return slider mode."""
+
+        return NumberMode.SLIDER
+
+    @property
+    def native_min_value(self) -> float:
+        """Return minimum allowed lower limit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 10.0
+        else:
+            return 50.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return maximum allowed lower limit."""
+
+        upper_limit = self.puck2_data.attributes.get('setpoint-bound-high', 32.0)
+        if self.hass.config.units is METRIC_SYSTEM:
+            return upper_limit
+        else:
+            return round(((upper_limit * (9/5)) + 32), 0)
+
+    @property
+    def native_step(self) -> float:
+        """Return temp stepping by 0.5 celsius or 1 fahrenheit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 0.5
+        else:
+            return 1.0
+
+    @property
+    def available(self) -> bool:
+        """Return true if puck is active and has setpoint bounds."""
+
+        if self.puck2_data.attributes['inactive']:
+            return False
+        return self.puck2_data.attributes.get('setpoint-bound-low') is not None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            temp = value
+        else:
+            temp = round(((value - 32) * (5/9)), 2)
+
+        attributes = self.set_attributes(temp)
+        await self.coordinator.client.update('puck2s', self.puck2_data.id, attributes=attributes, relationships={})
+        self.puck2_data.attributes['setpoint-bound-low'] = temp
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @staticmethod
+    def set_attributes(value: float) -> dict[str, float]:
+        """Creates attributes dictionary."""
+
+        attributes = {
+            "setpoint-bound-low": value
+        }
+        return attributes
+
+
+class Puck2UpperLimit(CoordinatorEntity, NumberEntity):
+    """Representation of Puck V2 set point upper limit."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self) -> Puck2:
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_upper_limit'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Set point upper limit"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon."""
+
+        return 'mdi:thermometer'
+
+    @property
+    def native_value(self) -> float | None:
+        """Returns current upper limit."""
+
+        value = self.puck2_data.attributes.get('setpoint-bound-high')
+        if value is None:
+            return None
+        if self.hass.config.units is METRIC_SYSTEM:
+            return value
+        else:
+            return round(((value * (9/5)) + 32), 0)
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfTemperature:
+        """Return celsius or fahrenheit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return UnitOfTemperature.CELSIUS
+        else:
+            return UnitOfTemperature.FAHRENHEIT
+
+    @property
+    def device_class(self) -> NumberDeviceClass:
+        """Return temp device class."""
+
+        return NumberDeviceClass.TEMPERATURE
+
+    @property
+    def mode(self) -> NumberMode:
+        """Return slider mode."""
+
+        return NumberMode.SLIDER
+
+    @property
+    def native_min_value(self) -> float:
+        """Return minimum allowed upper limit."""
+
+        lower_limit = self.puck2_data.attributes.get('setpoint-bound-low', 10.0)
+        if self.hass.config.units is METRIC_SYSTEM:
+            return lower_limit
+        else:
+            return round(((lower_limit * (9/5)) + 32), 0)
+
+    @property
+    def native_max_value(self) -> float:
+        """Return maximum allowed upper limit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 32.23
+        else:
+            return 90.0
+
+    @property
+    def native_step(self) -> float:
+        """Return temp stepping by 0.5 celsius or 1 fahrenheit."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 0.5
+        else:
+            return 1.0
+
+    @property
+    def available(self) -> bool:
+        """Return true if puck is active and has setpoint bounds."""
+
+        if self.puck2_data.attributes['inactive']:
+            return False
+        return self.puck2_data.attributes.get('setpoint-bound-high') is not None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            temp = value
+        else:
+            temp = round(((value - 32) * (5/9)), 2)
+
+        attributes = self.set_attributes(temp)
+        await self.coordinator.client.update('puck2s', self.puck2_data.id, attributes=attributes, relationships={})
+        self.puck2_data.attributes['setpoint-bound-high'] = temp
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @staticmethod
+    def set_attributes(value: float) -> dict[str, float]:
+        """Creates attributes dictionary."""
+
+        attributes = {
+            "setpoint-bound-high": value
+        }
+        return attributes
+
+
+class Puck2TempCalibration(CoordinatorEntity, NumberEntity):
+    """Representation of Puck V2 temperature calibration."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self) -> Puck2:
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_temp_calibration'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Temperature calibration"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon."""
+
+        return 'mdi:thermometer'
+
+    @property
+    def native_value(self) -> float | None:
+        """Returns current temp calibration."""
+
+        offset = self.puck2_data.attributes.get('temperature-offset-override-c')
+        if offset is None:
+            return None
+        temp_c = offset + 5.0
+        if self.hass.config.units is METRIC_SYSTEM:
+            return temp_c
+        else:
+            return round((temp_c * (9/5)), 0)
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfTemperature:
+        """Return celsius or fahrenheit depending on HA settings."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return UnitOfTemperature.CELSIUS
+        else:
+            return UnitOfTemperature.FAHRENHEIT
+
+    @property
+    def device_class(self) -> NumberDeviceClass:
+        """Return temp device class."""
+
+        return NumberDeviceClass.TEMPERATURE
+
+    @property
+    def mode(self) -> NumberMode:
+        """Return slider mode."""
+
+        return NumberMode.SLIDER
+
+    @property
+    def native_min_value(self) -> float:
+        """Return minimum allowed temp calibration."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return -10.0
+        else:
+            return -18.0
+
+    @property
+    def native_max_value(self) -> float:
+        """Return maximum allowed temp calibration."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 5.0
+        else:
+            return 9.0
+
+    @property
+    def native_step(self) -> float:
+        """Return temp stepping by 0.5C or 1F."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            return 0.5
+        else:
+            return 1.0
+
+    @property
+    def available(self) -> bool:
+        """Return true if puck is active and offset exists."""
+
+        if self.puck2_data.attributes['inactive']:
+            return False
+        return self.puck2_data.attributes.get('temperature-offset-override-c') is not None
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Update the current value."""
+
+        if self.hass.config.units is METRIC_SYSTEM:
+            ha_to_flair = value - 5.0
+        else:
+            zero_f_to_c = (-32 * (5/9)) + 5
+            value_to_c = ((value - 32) * (5/9))
+            ha_to_flair = (value_to_c - zero_f_to_c)
+
+        attributes = self.set_attributes(ha_to_flair)
+        await self.coordinator.client.update('puck2s', self.puck2_data.id, attributes=attributes, relationships={})
+        self.puck2_data.attributes['temperature-offset-override-c'] = ha_to_flair
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @staticmethod
+    def set_attributes(value: float) -> dict[str, float]:
+        """Creates attributes dictionary."""
+
+        attributes = {
+            "temperature-offset-override-c": value
         }
         return attributes

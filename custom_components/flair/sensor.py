@@ -87,6 +87,20 @@ async def async_setup_entry(
                 for bridge_id, bridge_data in structure_data.bridges.items():
                     sensors.append(BridgeRSSI(coordinator, structure_id, bridge_id))
 
+            # Puck V2
+            puck2s = getattr(structure_data, 'puck2s', {})
+            if puck2s:
+                for puck2_id in puck2s:
+                    sensors.extend((
+                        Puck2Temp(coordinator, structure_id, puck2_id),
+                        Puck2Humidity(coordinator, structure_id, puck2_id),
+                        Puck2Light(coordinator, structure_id, puck2_id),
+                        Puck2Voltage(coordinator, structure_id, puck2_id),
+                        Puck2RSSI(coordinator, structure_id, puck2_id),
+                        Puck2Pressure(coordinator, structure_id, puck2_id),
+                        Gateway(coordinator, structure_id, puck2_id, 'puck2s'),
+                    ))
+
     async_add_entities(sensors)
 
 
@@ -1358,6 +1372,8 @@ class Gateway(CoordinatorEntity, SensorEntity):
 
         if self.device_type == 'pucks':
             return self.structure_data.pucks[self.device_id]
+        elif self.device_type == 'puck2s':
+            return self.structure_data.puck2s[self.device_id]
         else:
             return self.structure_data.vents[self.device_id]
 
@@ -1425,17 +1441,508 @@ class Gateway(CoordinatorEntity, SensorEntity):
                 if connected_gateway_type == 'puck':
                     if gateway := self.structure_data.pucks.get(connected_gateway_id):
                         return gateway.attributes['name']
-                    # If the gateway isn't found
-                    else:
-                        return None
+                    puck2s = getattr(self.structure_data, 'puck2s', {})
+                    if gateway := puck2s.get(connected_gateway_id):
+                        return gateway.attributes['name']
+                    return None
                 elif connected_gateway_type == 'bridge':
                     if gateway := self.structure_data.bridges.get(connected_gateway_id):
                         return gateway.attributes['name']
-                    # If gateway isn't found
-                    else:
-                        return None
+                    return None
                 else:
                     return None
         else:
             return None
-        
+
+
+class Puck2Temp(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 Temperature."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_temperature'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Temperature"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float:
+        """Return current temperature in Celsius."""
+
+        return self.puck2_data.attributes['current-temperature-c']
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfTemperature:
+        """Return Celsius as the native unit."""
+
+        return UnitOfTemperature.CELSIUS
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.TEMPERATURE
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available."""
+
+        if not self.puck2_data.attributes['inactive']:
+            return True
+        else:
+            return False
+
+
+class Puck2Humidity(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 Humidity."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_humidity'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Humidity"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float:
+        """Return current humidity."""
+
+        return self.puck2_data.attributes['current-humidity']
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return percent as the native unit."""
+
+        return PERCENTAGE
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.HUMIDITY
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available."""
+
+        if not self.puck2_data.attributes['inactive']:
+            return True
+        else:
+            return False
+
+
+class Puck2Light(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 Light."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_light'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Light"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        """Return current lux level."""
+
+        light = self.puck2_data.current_reading.get('light') if self.puck2_data.current_reading else None
+        if light is None:
+            return None
+        return (light / 100) * 200
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return lux as the native unit."""
+
+        return LIGHT_LUX
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.ILLUMINANCE
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available and has light reading."""
+
+        if self.puck2_data.attributes['inactive']:
+            return False
+        light = self.puck2_data.current_reading.get('light') if self.puck2_data.current_reading else None
+        return light is not None
+
+
+class Puck2Voltage(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 Voltage."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_voltage'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Voltage"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        """Return voltage measurement."""
+
+        return self.puck2_data.attributes.get('voltage')
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfElectricPotential:
+        """Return volts as the native unit."""
+
+        return UnitOfElectricPotential.VOLT
+
+    @property
+    def suggested_display_precision(self) -> int:
+        """Return display precision for the voltage sensor."""
+
+        return VOLTAGE_PRECISION
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.VOLTAGE
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to diagnostic."""
+
+        return EntityCategory.DIAGNOSTIC
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available."""
+
+        if not self.puck2_data.attributes['inactive']:
+            return True
+        else:
+            return False
+
+
+class Puck2RSSI(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 RSSI."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_rssi'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "RSSI"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        """Return RSSI reading."""
+
+        return self.puck2_data.attributes.get('current-rssi')
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return dBm as the native unit."""
+
+        return SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.SIGNAL_STRENGTH
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to diagnostic."""
+
+        return EntityCategory.DIAGNOSTIC
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available."""
+
+        if not self.puck2_data.attributes['inactive']:
+            return True
+        else:
+            return False
+
+
+class Puck2Pressure(CoordinatorEntity, SensorEntity):
+    """Representation of Puck V2 pressure reading."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self):
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_pressure'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Pressure"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def native_value(self) -> float | None:
+        """Return pressure reading."""
+
+        if not self.puck2_data.current_reading:
+            return None
+        pressure = self.puck2_data.current_reading.get('room-pressure')
+        return round(pressure, 2) if pressure else pressure
+
+    @property
+    def native_unit_of_measurement(self) -> UnitOfPressure:
+        """Return kPa as the native unit."""
+
+        return UnitOfPressure.KPA
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        """Return entity device class."""
+
+        return SensorDeviceClass.PRESSURE
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the type of state class."""
+
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return true if device is available."""
+
+        if not self.puck2_data.attributes['inactive']:
+            return True
+        else:
+            return False
+

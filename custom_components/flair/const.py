@@ -153,6 +153,7 @@ TYPE_TO_MODEL = {
     "structures": "Structure",
     "rooms": "Room",
     "pucks": "Puck",
+    "puck2s": "Puck V2",
     "vents": "Vent",
     "bridges": "Bridge",
     "thermostats": "Thermostat",

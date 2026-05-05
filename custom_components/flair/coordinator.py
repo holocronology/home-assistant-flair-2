@@ -17,6 +17,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, LOGGER, TIMEOUT
+from .model import Puck2
 
 
 class FlairDataUpdateCoordinator(DataUpdateCoordinator):
@@ -58,4 +59,31 @@ class FlairDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(error) from error
         if not data.structures:
             raise UpdateFailed("No Structures found")
+
+        for structure_id, structure in data.structures.items():
+            puck2s: dict[str, Puck2] = {}
+            if 'puck2s' in structure.relationships:
+                try:
+                    raw_list = await self.client.get_related(structure, 'puck2s')
+                except Exception as err:
+                    LOGGER.warning(f'Failed to fetch puck2s for structure {structure_id}: {err}')
+                    raw_list = []
+                if raw_list:
+                    for raw in raw_list:
+                        obj = Puck2(
+                            id=raw['id'],
+                            attributes=raw['attributes'],
+                            relationships=raw['relationships'],
+                        )
+                        if not raw['attributes'].get('inactive', True):
+                            try:
+                                reading = await self.client.get_related(obj, 'current-reading')
+                                obj.current_reading = reading['attributes']
+                            except Exception:
+                                obj.current_reading = {}
+                        else:
+                            obj.current_reading = {}
+                        puck2s[raw['id']] = obj
+            structure.puck2s = puck2s
+
         return data
