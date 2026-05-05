@@ -39,8 +39,9 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry.version == 1:
         LOGGER.warning("The current version of home-assistant-flair requires OAuth2 credentials. Please reauthorize using OAuth2 credentials (NOT OAuth1).")
         entry.async_start_reauth(hass)
+        return False
 
-    if entry.version == 2:
+    elif entry.version == 2:
         LOGGER.info("Migrating Flair config entry to version 2.1")
         # Prior to release 0.1.3, unique_id was not set when a user migrated
         # from OAuth1.0 to 2.0 via reauthentication. In this case, if not present,

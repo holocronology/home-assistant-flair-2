@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from flairaio.model import Puck, Room, Structure
+from .model import Puck2
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -67,6 +68,15 @@ async def async_setup_entry(
                     selects.extend((
                         PuckBackground(coordinator, structure_id, puck_id),
                         PuckTempScale(coordinator, structure_id, puck_id),
+                    ))
+
+            # Puck V2
+            puck2s = getattr(structure_data, 'puck2s', {})
+            if puck2s:
+                for puck2_id in puck2s:
+                    selects.extend((
+                        Puck2Background(coordinator, structure_id, puck2_id),
+                        Puck2TempScale(coordinator, structure_id, puck2_id),
                     ))
 
     async_add_entities(selects)
@@ -1156,6 +1166,204 @@ class PuckTempScale(CoordinatorEntity, SelectEntity):
         attributes = self.set_attributes(ha_to_flair)
         await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
         self.puck_data.attributes['temperature-scale'] = ha_to_flair
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @staticmethod
+    def set_attributes(option: str) -> dict[str, str]:
+        """Creates attributes dictionary."""
+
+        attributes = {
+            "temperature-scale": option
+        }
+        return attributes
+
+
+class Puck2Background(CoordinatorEntity, SelectEntity):
+    """Representation of Puck V2 background color."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self) -> Puck2:
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_background_color'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Background color"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon."""
+
+        return 'mdi:invert-colors'
+
+    @property
+    def current_option(self) -> str | None:
+        """Returns current puck background color."""
+
+        color = self.puck2_data.attributes.get('puck-display-color')
+        return color.capitalize() if color else None
+
+    @property
+    def options(self) -> list[str]:
+        """Return list of all the available puck background colors."""
+
+        return PUCK_BACKGROUND
+
+    @property
+    def available(self) -> bool:
+        """Return true if puck is active and has display color attribute."""
+
+        if self.puck2_data.attributes['inactive']:
+            return False
+        return self.puck2_data.attributes.get('puck-display-color') is not None
+
+    async def async_select_option(self, option: str) -> None:
+        """Change the selected option."""
+
+        ha_to_flair = option.lower()
+        attributes = self.set_attributes(ha_to_flair)
+        await self.coordinator.client.update('puck2s', self.puck2_data.id, attributes=attributes, relationships={})
+        self.puck2_data.attributes['puck-display-color'] = ha_to_flair
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @staticmethod
+    def set_attributes(option: str) -> dict[str, str]:
+        """Creates attributes dictionary."""
+
+        attributes = {
+            "puck-display-color": option
+        }
+        return attributes
+
+
+class Puck2TempScale(CoordinatorEntity, SelectEntity):
+    """Representation of Puck V2 temperature scale selection."""
+
+    def __init__(self, coordinator, structure_id, puck2_id):
+        super().__init__(coordinator)
+        self.puck2_id = puck2_id
+        self.structure_id = structure_id
+
+    @property
+    def puck2_data(self) -> Puck2:
+        """Handle coordinator puck2 data."""
+
+        return self.coordinator.data.structures[self.structure_id].puck2s[self.puck2_id]
+
+    @property
+    def structure_data(self) -> Structure:
+        """Handle coordinator structure data."""
+
+        return self.coordinator.data.structures[self.structure_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.puck2_data.id)},
+            "name": self.puck2_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Puck V2",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.puck2_data.id) + '_temp_scale'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Temperature scale"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon."""
+
+        temp_scale = self.structure_data.attributes['temperature-scale']
+
+        if temp_scale == 'F':
+            return 'mdi:temperature-fahrenheit'
+        if temp_scale == 'C':
+            return 'mdi:temperature-celsius'
+        if temp_scale == 'K':
+            return 'mdi:temperature-kelvin'
+
+    @property
+    def current_option(self) -> str | None:
+        """Returns current puck temp scale."""
+
+        current_scale = self.structure_data.attributes['temperature-scale']
+        return TEMPERATURE_SCALES.get(current_scale)
+
+    @property
+    def options(self) -> list[str]:
+        """Return list of all the available temperature scales."""
+
+        return list(TEMPERATURE_SCALES.values())
+
+    async def async_select_option(self, option: str) -> None:
+        """Change the selected option."""
+
+        ha_to_flair = TEMP_SCALE_TO_FLAIR.get(option)
+        attributes = self.set_attributes(ha_to_flair)
+        await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
