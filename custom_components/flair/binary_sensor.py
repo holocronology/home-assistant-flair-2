@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from datetime import datetime, timedelta
-from flairaio.model import Bridge, Puck, Vent
+from flairaio.model import Bridge, Puck, Structure, Vent
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
