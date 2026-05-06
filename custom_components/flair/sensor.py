@@ -1209,7 +1209,11 @@ class LastButtonPressed(CoordinatorEntity, SensorEntity):
         """Handle coordinator puck data."""
 
         puck_id = self.hvac_data.relationships['puck']['data']['id']
-        return self.coordinator.data.structures[self.structure_id].pucks[puck_id]
+        pucks = self.coordinator.data.structures[self.structure_id].pucks
+        if puck_id in pucks:
+            return pucks[puck_id]
+        puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
+        return puck2s[puck_id]
 
     @property
     def device_info(self) -> dict[str, Any]:
