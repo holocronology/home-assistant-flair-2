@@ -1208,12 +1208,20 @@ class LastButtonPressed(CoordinatorEntity, SensorEntity):
     def puck_data(self) -> Puck:
         """Handle coordinator puck data."""
 
-        puck_id = self.hvac_data.relationships['puck']['data']['id']
-        pucks = self.coordinator.data.structures[self.structure_id].pucks
-        if puck_id in pucks:
-            return pucks[puck_id]
-        puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
-        return puck2s[puck_id]
+        puck_rel = self.hvac_data.relationships['puck']['data']
+        if puck_rel is not None:
+            puck_id = puck_rel['id']
+            pucks = self.coordinator.data.structures[self.structure_id].pucks
+            if puck_id in pucks:
+                return pucks[puck_id]
+
+        puck2_rel = self.hvac_data.relationships.get('puck2', {}).get('data')
+        if puck2_rel is not None:
+            puck_id = puck2_rel['id']
+            puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
+            return puck2s.get(puck_id)
+
+        return None
 
     @property
     def device_info(self) -> dict[str, Any]:
