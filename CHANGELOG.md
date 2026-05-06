@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.0b2] - 2026-05-06
+
+### Fixed
+- **HVAC mini-splits showing "Unavailable"** (`climate.py`, `sensor.py`): the Flair API uses a separate `'puck2'` relationship key (distinct from `'puck'`) to link Puck V2 devices to HVAC units. `HVAC.puck_data` and `LastButtonPressed.puck_data` now check `relationships['puck']` first and fall back to `relationships['puck2']` when the V1 key is absent, restoring availability for all Puck V2-linked mini-split entities.
+
+---
+
 ## [0.1.0b1] - 2026-05-05
 
 Initial beta release of the community fork.
