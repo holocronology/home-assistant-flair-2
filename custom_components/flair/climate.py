@@ -499,13 +499,20 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         """Handle coordinator puck data."""
 
         puck_data = self.hvac_data.relationships['puck']['data']
+        LOGGER.debug(
+            f'HVAC {self.hvac_data.attributes["name"]}: relationships={self.hvac_data.relationships!r}'
+        )
         if puck_data is None:
             return None
         puck_id = puck_data['id']
         pucks = self.coordinator.data.structures[self.structure_id].pucks
+        puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
+        LOGGER.debug(
+            f'HVAC {self.hvac_data.attributes["name"]}: puck_id={puck_id!r} '
+            f'pucks={list(pucks.keys())!r} puck2s={list(puck2s.keys())!r}'
+        )
         if puck_id in pucks:
             return pucks[puck_id]
-        puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
         return puck2s.get(puck_id)
 
     @property
