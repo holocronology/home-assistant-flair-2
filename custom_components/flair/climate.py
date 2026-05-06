@@ -502,7 +502,11 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         if puck_data is None:
             return None
         puck_id = puck_data['id']
-        return self.coordinator.data.structures[self.structure_id].pucks[puck_id]
+        pucks = self.coordinator.data.structures[self.structure_id].pucks
+        if puck_id in pucks:
+            return pucks[puck_id]
+        puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
+        return puck2s.get(puck_id)
 
     @property
     def room_data(self) -> Room:

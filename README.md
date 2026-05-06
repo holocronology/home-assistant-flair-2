@@ -1,20 +1,19 @@
-# Flair Home Assistant Integration
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration) ![GitHub manifest version (path)](https://img.shields.io/github/manifest-json/v/RobertD502/home-assistant-flair?filename=custom_components%2Fflair%2Fmanifest.json)
+# Flair Home Assistant Integration — Community Fork
 
-<a href="https://www.buymeacoffee.com/RobertD502" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="100" width="424"></a>
-<a href="https://liberapay.com/RobertD502/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg" height="100" width="300"></a>
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+![GitHub manifest version (path)](https://img.shields.io/github/manifest-json/v/holocronology/home-assistant-flair-2?filename=custom_components%2Fflair%2Fmanifest.json)
 
-### A lot of work has been put into creating the backend and this integration. If you enjoy this integration, consider donating by clicking on one of the supported methods above.
+This is a community-maintained fork of [RobertD502/home-assistant-flair](https://github.com/RobertD502/home-assistant-flair), adding **Puck V2** device support and ongoing improvements not available in the original integration.
 
-***All proceeds go towards helping a local animal rescue.**
+> **Why this fork?** The upstream repository has been dormant since mid-2024. This fork provides active maintenance, bug fixes, and new hardware support.
 
-___
+---
 
-Custom Home Assistant component for controlling and monitoring Flair structures, bridges, pucks, vents, rooms, and IR HVAC units.
+Custom Home Assistant component for controlling and monitoring Flair structures, bridges, pucks (V1 and V2), vents, rooms, and IR HVAC units.
 
-## **Prior To Installation**
+## Prior To Installation
 
-**Starting with version `0.1.1` and above**: You will need **OAuth 2.0** `client_id` and `client_secret` credentials.
+You will need **OAuth 2.0** `client_id` and `client_secret` credentials.
 
 To retrieve your credentials:
 1. Log in to your Flair account at [my.flair.co](https://my.flair.co/)
@@ -22,160 +21,172 @@ To retrieve your credentials:
 3. Scroll down to **Developer Settings**
 4. Copy your **Client ID** and **Client Secret**
 
-If you experience any issues, please [contact Flair Support](https://forms.gle/VohiQjWNv9CAP2ASA) with the email address associated with your registered Flair account.
+If you experience any issues with credentials, [contact Flair Support](https://forms.gle/VohiQjWNv9CAP2ASA) with the email address associated with your registered Flair account.
+
+---
 
 # Installation
 
-## With HACS
+## With HACS (Recommended)
 
-Click on the button below to automatically navigate to the repository within HACS:
+This integration is available as a **custom repository** in HACS. It is not listed in the HACS default store.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=RobertD502&repository=home-assistant-flair&category=integration)
-
-Alternatively, follow the steps below:
-
-1. Click on the `Explore & Download Repositories` button and search for Flair.
-2. On the Flair page, click on the `Download` button.
+1. In Home Assistant, go to **HACS → Integrations**
+2. Click the three-dot menu (top right) → **Custom repositories**
+3. Enter `holocronology/home-assistant-flair-2` and select category **Integration** → click **Add**
+4. Search for **Flair** in HACS → click **Download**
+5. Restart Home Assistant when prompted
 
 ## Manual
-Copy the `flair` directory, from `custom_components` in this repository,
-and place it inside your Home Assistant Core installation's `custom_components` directory.
 
-`Note`: If installing manually, in order to be alerted about new releases, you will need to subscribe to releases from this repository. 
+Copy the `flair` directory from `custom_components` in this repository and place it inside your Home Assistant Core installation's `custom_components` directory, then restart Home Assistant.
 
-## Setup
+---
 
-Click on the button below to add the integration:
+# Setup
+
+1. Navigate to **Settings → Devices & Services**
+2. Click **+ ADD INTEGRATION**
+3. Search for `Flair` and follow the prompts to enter your Client ID and Client Secret
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=flair)
 
-Alternatively, follow the steps below:
-
-1. Install this integration.
-2. Navigate to the Home Assistant Integrations page (Settings --> Devices & Services)
-3. Click the `+ ADD INTEGRATION` button in the lower right-hand corner
-4. Search for `Flair`
+---
 
 # Devices
 
-Each Flair mini-split, puck, room, structure, and vent is represented as a device in Home Assistant. Within each device
-are several entities described below.
-
+Each Flair mini-split, puck (V1 and V2), room, structure, and vent is represented as a device in Home Assistant.
 
 ## Structure
 
-Each structure has the following entities:
-
-| Entity                 | Entity Type | Additional Comments                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-|------------------------| --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Active Schedule`      | `Select` | Schedules are only available if the Flair System Mode is set to "Auto". All schedules created within the Flair app will appear here. To turn off a schedule, select "No Schedule". `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                              |
-| `Clear home/away hold` | `Button` | If you have a hold duration other than "Until next scheduled event", setting the home/away mode manually will result in your setting being held for the defined period of time. Pressing this button will remove the hold. `Note:` Pressing this button will only remove the time period hold, but will keep the home/away mode set to whatever you switched it to. In order to remove the hold and revert back to the original home/away mode, please use the "Reverse home/away hold" button. `Note:` By default, this entity is disabled if Flair system mode is set to manual. `Note:` By default, this entity is disabled if Flair system mode is set to manual. |
-| `Home/Away`       | `Select` | Please read Flair's documentation regarding [Home/Away Mode](https://support.flair.co/hc/en-us/articles/360044922952-Home-Away-Mode). `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                            |
-| `Lock IR device modes` | `Switch` | Turning this on will keep heat/cool mode of all IR devices in your Home in sync. It is recommended for Mini-Split systems that share a common outdoor unit, also known as multi-zone systems. `This entity will only be available if you have any IR devices associated with your account.`                                                                                                                                                                                                     |
-| `Network repair mode` | `Switch` | Turn this on to temporarily allow Sensor Pucks and Vents to connect to different gatways. `Network repair mode will turn itself off after 30 minutes, if not turned off by the user.`                                                                                                                                                                                                     |
-| `Reverse home/away hold` | `Button` | Pressing this button removes the current hold for home/away mode and reverts the mode back. For example: If you set your home to away mode, pressing this button sets the mode back to home. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                 |
-| `Structure`       | `Climate` | Entity to set Flair Structure mode and Structure Set point. `Target temperature is only available when Set point controller is set to Flair app`. Please read Flair's documentation regarding [Structure mode](https://support.flair.co/hc/en-us/articles/360058466931-Mode). `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                                     |
-| `System Mode`          | `Select` | Please read Flair's documentation regarding [Auto mode](https://support.flair.co/hc/en-us/articles/360042659392-System-Auto) and [Manual mode](https://support.flair.co/hc/en-us/articles/360043099291-System-Manual)                                                                                                                                                                                                                                                                           |
-| `Home/Away holding until` | `Sensor` | If you have your default hold set to anything other than "Until next scheduled event", whenever setting home/away mode manually, this entity will show how much time if left until the hold ends. `Note:` This entity will only become available if there is home/away hold that is currently active. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                          |
-| `Away Mode`  | `Select` | Please read Flair's documentation regarding [Away Settings](https://support.flair.co/hc/en-us/articles/360041109111-Away-Settings). `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                              |
-| `Away temperature maximum` | `Number` | Set your max away temperature. `Note:` This entity is only available when your set point controller is set to "Flair App". By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                                      |
-| `Away temperature minimum` | `Number` | Set your minimum away temperature. `Note:` This entity is only available when your set point controller is set to "Flair App". By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                                  |
-| `Default hold duration` | `Select` | Select your default hold duration. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `Home/Away mode set by` | `Select` | Available options inclue App Geolocation, Manual, or (if you have a thermostat linked to Flair) Thermostat. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                                                                     |
-| `Set point controller` | `Select` | Select what is being used to set the set point for your home. Options include Flair App and Thermostat (only if you have a thermostat linked to Flair). `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                                                                                                                         |
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `Active Schedule` | `Select` | All schedules created in the Flair app appear here. Select "No Schedule" to disable. Disabled by default if system mode is manual. |
+| `Away Mode` | `Select` | See Flair's [Away Settings](https://support.flair.co/hc/en-us/articles/360041109111-Away-Settings) docs. Disabled by default if system mode is manual. |
+| `Away temperature maximum` | `Number` | Only available when set point controller is set to "Flair App". Disabled by default if system mode is manual. |
+| `Away temperature minimum` | `Number` | Only available when set point controller is set to "Flair App". Disabled by default if system mode is manual. |
+| `Clear home/away hold` | `Button` | Removes the time-period hold on home/away mode without reverting the mode itself. Disabled by default if system mode is manual. |
+| `Default hold duration` | `Select` | Disabled by default if system mode is manual. |
+| `Home/Away` | `Select` | See Flair's [Home/Away Mode](https://support.flair.co/hc/en-us/articles/360044922952-Home-Away-Mode) docs. Disabled by default if system mode is manual. |
+| `Home/Away holding until` | `Sensor` | Shows time remaining on a manual home/away hold. Only available when a hold is active. Disabled by default if system mode is manual. |
+| `Home/Away mode set by` | `Select` | Options: Manual, Flair App Geolocation, or Thermostat (if linked). Disabled by default if system mode is manual. |
+| `Lock IR device modes` | `Switch` | Keeps heat/cool mode in sync across all IR devices. Only available if IR devices are associated with your account. |
+| `Network repair mode` | `Switch` | Temporarily allows pucks and vents to connect to different gateways. Turns off automatically after 30 minutes. |
+| `Reverse home/away hold` | `Button` | Removes the current hold and reverts home/away mode back to its previous state. Disabled by default if system mode is manual. |
+| `Set point controller` | `Select` | Options: Flair App, or Thermostat (if linked). Disabled by default if system mode is manual. |
+| `Structure` | `Climate` | Sets Flair Structure mode and set point. Target temperature only available when set point controller is "Flair App". Disabled by default if system mode is manual. |
+| `System Mode` | `Select` | See Flair's [Auto](https://support.flair.co/hc/en-us/articles/360042659392-System-Auto) and [Manual](https://support.flair.co/hc/en-us/articles/360043099291-System-Manual) mode docs. |
 
 ## Bridge
 
-Each bridge has the following entities:
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `Connection status` | `Binary Sensor` | Reports whether the bridge is online according to Flair. |
+| `LED brightness` | `Number` | Brightness between 20–100. |
+| `RSSI` | `Sensor` | Reports 0.0 when connected via ethernet. |
 
-| Entity               | Entity Type | Additional Comments |
-|----------------------|-------------| --- |
-| `LED brightness`          | `Number`    | Brightness between 20-100. |
-| `Connection status`          | `Binary Sensor`    | Used to show if the bridge is reported as being online by Flair. |
-| `RSSI`               | `Sensor`    | If your bridge is connected via ethernet, this sensor will always report 0.0 |
+## Puck (V1)
 
-## Puck
-
-Each puck has the following entities:
-
-| Entity               | Entity Type | Additional Comments |
-|----------------------|-------------| --- |
-| `Lock puck`          | `Switch`    | Locking a puck will prevent someone from rotating the puck to adjust the set point. |
-| `Humidity`           | `Sensor`    | |
-| `Light`              | `Sensor`    | |
-| `Pressure` |  `Sensor`   | Room pressure reported by the puck. |
-| `Temperature`        | `Sensor`    | |
-| `Background color` | `Select` | Set the puck's background color to either black or white. |
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `Associated gateway` | `Sensor` | Name of the gateway the puck is using. Reports "Self" if the puck is acting as its own gateway. |
+| `Background color` | `Select` | Set the puck background to black or white. |
+| `Connection status` | `Binary Sensor` | Reports whether the puck is online according to Flair. |
+| `Humidity` | `Sensor` | |
+| `Light` | `Sensor` | See note below regarding light sensor accuracy. |
+| `Lock puck` | `Switch` | Prevents the puck from being rotated to adjust the set point. |
+| `Pressure` | `Sensor` | Room pressure reported by the puck. |
+| `RSSI` | `Sensor` | |
 | `Set point lower limit` | `Number` | |
 | `Set point upper limit` | `Number` | |
+| `Temperature` | `Sensor` | |
 | `Temperature calibration` | `Number` | |
 | `Temperature scale` | `Select` | |
-| `Associated gateway`            | `Sensor`    | Displays the name of the gateway (as named in the Flair app) the puck is using. If the puck is a gateway itself, this sensor will read "Self". |
-| `Connection status`          | `Binary Sensor`    | Used to show if the puck is reported as being online by Flair. |
-| `RSSI`               | `Sensor`    | |
-| `Voltage`            | `Sensor`    | Displays the current voltage of the puck. If using batteries to power your puck, this can be used to monitor battery health. |
+| `Voltage` | `Sensor` | Useful for monitoring battery health. |
 
-**Note About Pucks**
+**Note on Puck Light Sensor**
 
-Flair statement regarding Puck Light Level sensor:
+Per Flair: *"It is not calibrated. The sensor itself, if the nominal reference is 1, can range from 0.3 to 1.6. This also doesn't take into account the mechanical loss in the Puck. In short, this is not an accurate lux sensor."*
 
->  It is not calibrated. The sensor itself, if the nominal reference is 1, can range from 0.3 to 1.6. This also doesn't take into account the mechanical loss in the Puck. In short, this is not an accurate lux sensor.
+## Puck V2
 
+Puck V2 devices (`puck2s`) are supported in this fork. The following entities are available:
+
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `Associated gateway` | `Sensor` | Name of the gateway the puck is using. Reports "Self" if the puck is acting as its own gateway. |
+| `Background color` | `Select` | Set the puck background to black or white. Only available if supported by the device. |
+| `Connection status` | `Binary Sensor` | Reports whether the puck is online according to Flair. |
+| `Humidity` | `Sensor` | |
+| `Light` | `Sensor` | Only available if the device reports a light reading. |
+| `Lock puck` | `Switch` | Only available if the device supports the lock attribute. |
+| `Pressure` | `Sensor` | Room pressure reported by the puck. |
+| `RSSI` | `Sensor` | |
+| `Set point lower limit` | `Number` | Only available if the device reports setpoint bounds. |
+| `Set point upper limit` | `Number` | Only available if the device reports setpoint bounds. |
+| `Temperature` | `Sensor` | |
+| `Temperature calibration` | `Number` | Only available if the device reports a temperature offset. |
+| `Temperature scale` | `Select` | |
+| `Voltage` | `Sensor` | Useful for monitoring battery health. |
+
+> **Note:** Puck V2 was not supported in the upstream integration. This fork fetches `puck2s` as a separate resource type from the Flair API, which the upstream library (`flairaio`) does not request. Entities that depend on attributes not present on a given device will show as unavailable rather than causing errors.
 
 ## Vent
 
 <p align="center">
-  <img width="533" height="1000" src="https://github.com/RobertD502/home-assistant-flair/blob/main/images/flair_system_setting_smaller.png?raw=true">
+  <img width="533" height="1000" src="https://github.com/holocronology/home-assistant-flair-2/blob/main/images/flair_system_setting_smaller.png?raw=true">
 </p>
 
-In order to control vents that are in Flair Rooms that have a temperature sensor, the System setting in the Flair app needs to be set to `Manual` (see image above). If you have it set to `Auto`, you will still be able to control your vents, however, eventually Flair will override your changes. This mode can also be set using a Flair Structure's `System Mode select entity` within Home Assistant.
+To control vents in Flair Rooms that have a temperature sensor, the System setting in the Flair app must be set to `Manual`. In `Auto` mode you can still send commands, but Flair will eventually override them. System mode can also be changed using the Structure's `System Mode` entity in Home Assistant.
 
-**Any vents in Flair Rooms that don't report temperature can be controlled regardless of current mode set.**
-
-Each Vent has the following entities:
+**Vents in rooms without a temperature sensor can be controlled regardless of mode.**
 
 | Entity | Entity Type | Additional Comments |
-| --- | --- | --- |
-| `Vent` | `Cover` | Has a state of either `open` or `closed`. If your vent is either `50` or `100` percent open, the state will be `open`. If your vent is `0` percent open, the state will be `closed`. You can manually open the vent halfway (50 percent) by either changing the tilt position to `50` via the UI or by using the service `cover.set_cover_tilt_position` and setting `tilt position` to `50`. Note: Although you can move the slider to any value between 0-100, any tilt position other than `0` or `100` will be interpreted as `50` - this is a Flair vent limitation as it doesn't support any other position aside from 0, 50, or 100. |
+|---|---|---|
+| `Associated gateway` | `Sensor` | Name of the bridge or puck the vent is using as a gateway. |
+| `Connection status` | `Binary Sensor` | Reports whether the vent is online according to Flair. |
 | `Duct Pressure` | `Sensor` | |
 | `Duct Temperature` | `Sensor` | |
-| `Reported state` | `Sensor` | This entity is disabled by default. Value corresponds to the percent open of the vent as last reported by the sensor on the vent itself. Can be used in automations to determine if puck failed to open/close a vent by comparing if the state of this sensor is equal to the position of the related vent cover entity (for example checking 5 minutes after the current position of the vent cover entity changed). |
-| `Associated gateway`            | `Sensor`    | Displays the name of the bridge or puck (as named in the Flair app) the vent is using as a gateway. |
-| `Connection status`          | `Binary Sensor`    | Used to show if the vent is reported as being online by Flair. |
+| `Reported state` | `Sensor` | Disabled by default. Percent open as last reported by the vent's own sensor. Useful in automations to verify vent movement. |
 | `RSSI` | `Sensor` | |
-| `Voltage` | `Sensor` | Displays the current voltage of the vent. If using batteries to power your vent, this can be used to monitor battery health. |
+| `Vent` | `Cover` | State is `open` (50% or 100%) or `closed` (0%). Any tilt position other than 0 or 100 is interpreted as 50 due to a Flair hardware limitation. |
+| `Voltage` | `Sensor` | Useful for monitoring battery health. |
 
 ## Room
 
-Each Room has the following entities:
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `Activity Status` | `Select` | Set room to Active or Inactive. Disabled by default if system mode is manual. |
+| `Clear hold` | `Button` | Clears the temperature hold and reverts to the scheduled set point. Disabled by default if system mode is manual. |
+| `Room` | `Climate` | Change temperature set point per room. Changing HVAC mode propagates to all rooms (mode is set at the Structure level). Disabled by default if system mode is manual. |
+| `Temperature holding until` | `Sensor` | Time remaining on a manual temperature hold. Only available when a hold is active. Disabled by default if system mode is manual. |
 
-| Entity                      | Entity Type | Additional Comments                                                                                                                                                                                                                                                               |
-|-----------------------------| --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Activity Status`           | `Select` | Rooms can be set to Active or Inactive. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                                                                                           |
-| `Clear hold`                | `Button` | Clears the current temperature set point change hold time and reverts back to the original set point. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                                                                                             |
-| `Room`                      | `Climate` | Temperature set points can be changed on a room by room basis. Changing HVAC mode for a room propagates that change to all rooms as the HVAC mode is set at the Structure level. `Note:` By default, this entity is disabled if Flair system mode is set to manual.                                                                                                  |
-| `Temperature holding until` | `Sensor` | If you have the default hold duration set to anything other than "Until next scheduled event", this entity will show you how much time is left until the manual temperature hold expires. `Note:` This entity is only available if there is a currently active hold for the room. By default, this entity is disabled if Flair system mode is set to manual. |
-
-**Additional Notes**
-
-Changing the temperature for a room climate entity will change the set temperature of the corresponding room. This change will remain for `until next scheduled event`, `3h`, `8h`, `24h`, or `forever`- this depends on the setting in the Flair app under Home Settings > System Settings > Default Hold Duration. This can also be changed using the "Default hold duration" entity in Home Assistant.
-
+Changing a room's temperature will hold for the duration set in Flair app under **Home Settings → System Settings → Default Hold Duration**, or as configured via the `Default hold duration` entity in Home Assistant.
 
 ## IR HVAC Unit
 
-Each IR HVAC unit has the following entities:
+| Entity | Entity Type | Additional Comments |
+|---|---|---|
+| `HVAC unit` | `Climate` | See notes below. |
 
-| Entity      | Entity Type | Additional Comments |
-|-------------| --- |---------------------|
-| `HVAC unit` | `Climate` | SEE NOTE BELOW      |
+> **Auto Mode:** Only fan speed and swing can be controlled. Temperature set point is controlled at the room level.
+>
+> **Manual Mode:** Full control including HVAC mode. Setting mode to `Off` turns the unit off.
 
-> To fully control your unit, the associated Flair structure needs to be in `Manual Mode`.
-> 
-> If your structure is set to `Auto Mode`: you will only be able to control `Fan speed` and `Swing` (if available for your unit). In addition, mini split temperature set point is controlled by rooms if a Flair structure is set to `Auto Mode`. Changing the temperature of this climate entity will result in changing the room set point when in `Auto Mode`. You also cannot change the HVAC mode as this is controlled at the Structure level when in auto mode.
-> 
-> If your structure is set to `Manual Mode`: Setting the HVAC mode to `Off` will turn your HVAC unit off. In order to turn the unit on, set the HVAC mode to your desired HVAC mode (Heat, Cool, Fan Only, etc).
+### Button-only HVAC units
 
-### If your HVAC unit only has standalone buttons in the Flair app:
+For units that only expose standalone buttons in the Flair app, `Button` entities are created for each available control (Temp +, Temp -, Fan +, Fan -, etc.), plus a `Last button pressed` sensor showing the last command sent.
 
-For these HVAC units `button` entities are created depending on what control is available (Temp +, Temp -, Fan +, Fan -, etc).
-In addition, a `Last button pressed` `sensor` entity is created showing the last command sent to the HVAC unit by Flair. By default, if the Flair API doesn't return a value for the last button pressed, the sensor will have a state of `No button pressed`.
+---
+
+# Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+---
+
+# Contributing / Issues
+
+Please open issues and pull requests at [holocronology/home-assistant-flair-2](https://github.com/holocronology/home-assistant-flair-2/issues).
+
+This fork is based on the original work by [RobertD502](https://github.com/RobertD502/home-assistant-flair). Bug fixes that apply to the upstream integration may also be submitted there.
