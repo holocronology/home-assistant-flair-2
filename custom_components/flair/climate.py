@@ -652,8 +652,16 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         return self.structure_data.attributes['mode']
 
     @property
+    @property
     def hvac_mode(self) -> HVACMode:
         """Return the current hvac_mode."""
+
+        # In auto mode the structure controls all units. If the structure is
+        # set to Off (float), every unit should report Off regardless of its
+        # last cached mode attribute.
+        if self.structure_mode == 'auto':
+            if self.structure_data.attributes.get('structure-heat-cool-mode') == 'float':
+                return HVACMode.OFF
 
         mode = self.hvac_data.attributes['mode']
 
@@ -670,10 +678,12 @@ class HVAC(CoordinatorEntity, ClimateEntity):
 
         current_mode = self.hvac_data.attributes['mode']
 
-        # Can't change modes when structure mode is
-        # auto regardless of power state. So, we
-        # need to only return the last mode it was in.
-        if self.structure_mode =='auto':
+        if self.structure_mode == 'auto':
+            # When the structure is off, only Off is valid.
+            if self.structure_data.attributes.get('structure-heat-cool-mode') == 'float':
+                return [HVACMode.OFF]
+            # Can't change modes when structure mode is auto otherwise —
+            # only return the last mode it was in.
             supported_modes = []
             if current_mode in HVAC_CURRENT_MODE_MAP:
                 supported_modes.append(HVAC_CURRENT_MODE_MAP[current_mode])
@@ -681,7 +691,7 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         else:
             modes = self.available_hvac_modes
             supported_modes = []
-            # Always make Off mode avaiilable for manually controlled units
+            # Always make Off mode available for manually controlled units
             if self.structure_mode == 'manual':
                 supported_modes.append(HVACMode.OFF)
             for mode in modes:
@@ -692,6 +702,11 @@ class HVAC(CoordinatorEntity, ClimateEntity):
     @property
     def hvac_action(self) -> HVACAction:
         """Return HVAC current action."""
+
+        # Mirror the structure-off check from hvac_mode.
+        if self.structure_mode == 'auto':
+            if self.structure_data.attributes.get('structure-heat-cool-mode') == 'float':
+                return HVACAction.OFF
 
         if self.is_on:
             if self.hvac_mode == HVACMode.HEAT_COOL:
