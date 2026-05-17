@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.1.0b3] - 2026-05-17
 
 ### Added
 - **Options flow for scan interval & API timeout** (`config_flow.py`, `coordinator.py`, `const.py`, `__init__.py`): configure → "Configure" on the Flair integration now opens an options form to tune polling cadence (15–600 s, default 30 s) and per-request timeout (5–120 s, default 20 s). The entry is reloaded automatically when options change.
