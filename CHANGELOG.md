@@ -8,8 +8,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Options flow for scan interval & API timeout** (`config_flow.py`, `coordinator.py`, `const.py`, `__init__.py`): configure → "Configure" on the Flair integration now opens an options form to tune polling cadence (15–600 s, default 30 s) and per-request timeout (5–120 s, default 20 s). The entry is reloaded automatically when options change.
+
 ### Changed
 - **Resilient Puck V2 fetching** (`coordinator.py`): narrowed the previous broad `except Exception` around the `puck2s` and `current-reading` fetches to `FlairError` / `asyncio.TimeoutError`, with `FlairAuthError` now correctly routed to reauth. On transient failures the coordinator retains the previous successful puck2 data and current readings instead of resetting them to empty, so Puck V2 entities no longer flicker to unavailable on a single API hiccup. Warning logs now include the exception type, structure name, and how many cached devices were retained.
+- **Set-point controller awareness** (`climate.py`): when the structure's set-point controller is "Thermostat", the `StructureClimate` entity now omits the `TARGET_TEMPERATURE` feature flag (so the temperature slider is hidden) and `async_set_temperature` raises a `HomeAssistantError` with actionable text instead of silently logging. Previously, temperature changes in this mode were dropped without any user-visible feedback.
 
 ---
 

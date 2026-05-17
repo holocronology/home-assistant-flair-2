@@ -209,9 +209,20 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def supported_features(self) -> int:
-        """Return supported features."""
+        """Return supported features.
 
-        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_OFF
+        TARGET_TEMPERATURE is omitted when the set-point controller is the
+        thermostat — Flair will not honor structure-level set points in that
+        mode, so we hide the control rather than letting the user issue
+        commands that silently no-op.
+        """
+
+        features = ClimateEntityFeature.TURN_OFF
+        if self.structure_data.attributes.get('set-point-mode') != (
+            "Home Evenness For Active Rooms Follow Third Party"
+        ):
+            features |= ClimateEntityFeature.TARGET_TEMPERATURE
+        return features
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -248,18 +259,23 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
 
         current_controller = self.structure_data.attributes['set-point-mode']
         if current_controller == "Home Evenness For Active Rooms Follow Third Party":
-            LOGGER.error(f'Target temperature for Structure {self.structure_data.attributes["name"]} can only be set when the "Set point controller" is Flair app')
-        else:
-            if self.hass.config.units is METRIC_SYSTEM:
-                temp = kwargs.get(ATTR_TEMPERATURE)
-            else:
-                temp = round(((kwargs.get(ATTR_TEMPERATURE) - 32) * (5/9)), 2)
+            raise HomeAssistantError(
+                f'Cannot set target temperature for structure '
+                f'"{self.structure_data.attributes["name"]}": the set-point '
+                f'controller is currently set to Thermostat. Switch it to '
+                f'"Flair App" to control structure temperature from Home Assistant.'
+            )
 
-            attributes = self.set_attributes(temp, 'temperature')
-            await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
-            self.structure_data.attributes['set-point-temperature-c'] = temp
-            self.async_write_ha_state()
-            await self.coordinator.async_request_refresh()
+        if self.hass.config.units is METRIC_SYSTEM:
+            temp = kwargs.get(ATTR_TEMPERATURE)
+        else:
+            temp = round(((kwargs.get(ATTR_TEMPERATURE) - 32) * (5/9)), 2)
+
+        attributes = self.set_attributes(temp, 'temperature')
+        await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
+        self.structure_data.attributes['set-point-temperature-c'] = temp
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
 
     async def async_set_hvac_mode(self, hvac_mode) -> None:
         """Set new target hvac mode."""

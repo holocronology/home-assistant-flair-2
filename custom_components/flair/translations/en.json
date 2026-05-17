@@ -26,5 +26,17 @@
                 "title": "Reauthenticate with your Flair OAuth 2.0 credentials"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Flair options",
+                "description": "Tune how often Home Assistant polls the Flair cloud API and how long each request is allowed to take.",
+                "data": {
+                    "scan_interval": "Scan interval (seconds)",
+                    "timeout": "API timeout (seconds)"
+                }
+            }
+        }
     }
 }

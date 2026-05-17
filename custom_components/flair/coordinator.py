@@ -17,7 +17,14 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, LOGGER, TIMEOUT
+from .const import (
+    CONF_SCAN_INTERVAL,
+    CONF_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TIMEOUT,
+    DOMAIN,
+    LOGGER,
+)
 from .model import Puck2
 
 
@@ -29,17 +36,20 @@ class FlairDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize the Flair coordinator."""
 
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        timeout = entry.options.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+
         self.client = FlairClient(
             entry.data[CONF_CLIENT_ID],
             entry.data[CONF_CLIENT_SECRET],
             session=async_get_clientsession(hass),
-            timeout=TIMEOUT,
+            timeout=timeout,
         )
         super().__init__(
             hass,
             LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
     async def _async_update_data(self) -> FlairData:

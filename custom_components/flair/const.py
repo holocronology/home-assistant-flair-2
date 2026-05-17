@@ -21,7 +21,14 @@ from homeassistant.const import Platform
 LOGGER = logging.getLogger(__package__)
 
 
+CONF_SCAN_INTERVAL = "scan_interval"
+CONF_TIMEOUT = "timeout"
 DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_TIMEOUT = 20
+MIN_SCAN_INTERVAL = 15
+MAX_SCAN_INTERVAL = 600
+MIN_TIMEOUT = 5
+MAX_TIMEOUT = 120
 DOMAIN = "flair"
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -35,7 +42,8 @@ PLATFORMS = [
 ]
 
 DEFAULT_NAME = "Flair"
-TIMEOUT = 20
+# TIMEOUT retained as a backwards-compatible alias for the default timeout value.
+TIMEOUT = DEFAULT_TIMEOUT
 VOLTAGE_PRECISION = 2
 
 FLAIR_ERRORS = (

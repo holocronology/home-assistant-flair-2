@@ -12,7 +12,18 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 
-from .const import DEFAULT_NAME, DOMAIN
+from .const import (
+    CONF_SCAN_INTERVAL,
+    CONF_TIMEOUT,
+    DEFAULT_NAME,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_TIMEOUT,
+    DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MAX_TIMEOUT,
+    MIN_SCAN_INTERVAL,
+    MIN_TIMEOUT,
+)
 from .util import NoStructuresError, NoUserError, async_validate_api
 
 
@@ -30,6 +41,14 @@ class FlairConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2.1
 
     entry: config_entries.ConfigEntry | None
+
+    @staticmethod
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> FlairOptionsFlow:
+        """Return the options flow handler."""
+
+        return FlairOptionsFlow(config_entry)
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> FlowResult:
         """Handle re-authentication with Flair."""
@@ -117,3 +136,46 @@ class FlairConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=DATA_SCHEMA,
             errors=errors,
         )
+
+
+class FlairOptionsFlow(config_entries.OptionsFlow):
+    """Handle the options flow for the Flair integration."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize the options flow."""
+
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage Flair options."""
+
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current_scan_interval = self.config_entry.options.get(
+            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+        )
+        current_timeout = self.config_entry.options.get(
+            CONF_TIMEOUT, DEFAULT_TIMEOUT
+        )
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_SCAN_INTERVAL, default=current_scan_interval
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                ),
+                vol.Required(
+                    CONF_TIMEOUT, default=current_timeout
+                ): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_TIMEOUT, max=MAX_TIMEOUT),
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=schema)
