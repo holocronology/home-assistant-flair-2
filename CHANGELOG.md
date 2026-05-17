@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [0.1.0b4] - 2026-05-17
 
 ### Added
 - **Diagnostics support** (`diagnostics.py`): the integration now exposes a diagnostics dump via **Settings → Devices & Services → Flair → Download Diagnostics**. The report includes structure attributes, relationship keys, puck/puck2/vent/room/HVAC unit/bridge data, and current readings. OAuth credentials are automatically redacted. HVAC unit `relationships` are included in full (not just keys) to make future puck-linkage issues immediately visible without needing debug logging.
