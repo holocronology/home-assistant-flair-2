@@ -6,6 +6,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Diagnostics support** (`diagnostics.py`): the integration now exposes a diagnostics dump via **Settings → Devices & Services → Flair → Download Diagnostics**. The report includes structure attributes, relationship keys, puck/puck2/vent/room/HVAC unit/bridge data, and current readings. OAuth credentials are automatically redacted. HVAC unit `relationships` are included in full (not just keys) to make future puck-linkage issues immediately visible without needing debug logging.
+
+### Verified (no code change needed)
+- **Puck V2 ⇄ Room availability**: Room climate entities derive availability from `current-temperature-c` directly and perform no puck lookups — unaffected by the puck/puck2 relationship key distinction.
+- **Long-term statistics**: all measurement sensors already carry `state_class = MEASUREMENT` and typed `native_unit_of_measurement` constants — HA long-term statistics and graphing are enabled automatically.
+
+---
+
 ## [0.1.0b3] - 2026-05-17
 
 ### Added
