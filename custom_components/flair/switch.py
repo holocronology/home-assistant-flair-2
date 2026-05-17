@@ -9,6 +9,7 @@ from .model import Puck2
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -27,6 +28,7 @@ async def async_setup_entry(
 
     for structure_id, structure_data in coordinator.data.structures.items():
             # Structures
+            switches.append(SmartAway(coordinator, structure_id))
             if structure_data.hvac_units:
                 switches.extend((
                     LockIR(coordinator, structure_id),
@@ -388,5 +390,113 @@ class Puck2Lock(CoordinatorEntity, SwitchEntity):
         attributes = {"locked": False}
         await self.coordinator.client.update('puck2s', self.puck2_data.id, attributes=attributes, relationships={})
         self.puck2_data.attributes['locked'] = False
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class SmartAway(CoordinatorEntity, SwitchEntity):
+    """Switch wrapping the structure's "Smart Away" mode.
+
+    On  = "Smart Away" — Flair will auto-shift the structure to Away based
+          on app geolocation / occupancy heuristics.
+    Off = "Off Only"  — Auto-away is disabled.
+
+    Mirrors the existing AwayMode select entity but as a switch, which is
+    easier to wire into Home Assistant presence automations.
+    """
+
+    def __init__(self, coordinator, structure_id):
+        super().__init__(coordinator)
+        self.structure_id = structure_id
+
+    @property
+    def structure_data(self) -> Structure:
+        """Handle coordinator structure data."""
+
+        return self.coordinator.data.structures[self.structure_id]
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device registry information for this entity."""
+
+        return {
+            "identifiers": {(DOMAIN, self.structure_data.id)},
+            "name": self.structure_data.attributes['name'],
+            "manufacturer": "Flair",
+            "model": "Structure",
+            "configuration_url": "https://my.flair.co/",
+        }
+
+    @property
+    def unique_id(self) -> str:
+        """Sets unique ID for this entity."""
+
+        return str(self.structure_data.id) + '_smart_away'
+
+    @property
+    def name(self) -> str:
+        """Return name of the entity."""
+
+        return "Smart Away"
+
+    @property
+    def has_entity_name(self) -> bool:
+        """Indicate that entity has name defined."""
+
+        return True
+
+    @property
+    def entity_category(self) -> EntityCategory:
+        """Set category to config."""
+
+        return EntityCategory.CONFIG
+
+    @property
+    def icon(self) -> str:
+        """Set icon based on current state."""
+
+        return 'mdi:home-account' if self.is_on else 'mdi:home-off'
+
+    @property
+    def is_on(self) -> bool:
+        """Return true when Smart Away is enabled."""
+
+        return self.structure_data.attributes.get('structure-away-mode') == 'Smart Away'
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Disable entity if system mode is set to manual on initial registration."""
+
+        return self.structure_data.attributes.get('mode') != 'manual'
+
+    @property
+    def available(self) -> bool:
+        """Marks entity as unavailable if system mode is set to Manual."""
+
+        return self.structure_data.attributes.get('mode') != 'manual'
+
+    async def async_turn_on(self, **kwargs) -> None:
+        """Enable Smart Away."""
+
+        await self.coordinator.client.update(
+            'structures',
+            self.structure_data.id,
+            attributes={"structure-away-mode": "Smart Away"},
+            relationships={},
+        )
+        self.structure_data.attributes['structure-away-mode'] = "Smart Away"
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs) -> None:
+        """Disable Smart Away (set to Off Only)."""
+
+        await self.coordinator.client.update(
+            'structures',
+            self.structure_data.id,
+            attributes={"structure-away-mode": "Off Only"},
+            relationships={},
+        )
+        self.structure_data.attributes['structure-away-mode'] = "Off Only"
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

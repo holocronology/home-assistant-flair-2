@@ -10,10 +10,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 - **Diagnostics support** (`diagnostics.py`): the integration now exposes a diagnostics dump via **Settings → Devices & Services → Flair → Download Diagnostics**. The report includes structure attributes, relationship keys, puck/puck2/vent/room/HVAC unit/bridge data, and current readings. OAuth credentials are automatically redacted. HVAC unit `relationships` are included in full (not just keys) to make future puck-linkage issues immediately visible without needing debug logging.
+- **Repairs / issue registry integration** (`climate.py`): when a Flair HVAC unit has no associated Puck (V1 or V2), the integration now raises an actionable item in **Settings → Repairs** instead of only writing a one-shot log warning. The issue clears automatically once a Puck is linked and the next update runs.
+- **Smart Away switch** (`switch.py`): a new structure-level `switch.<structure>_smart_away` entity exposes "Smart Away" mode as an on/off control, making it trivial to wire into Home Assistant presence automations (e.g. flip off when everyone is home, on when everyone leaves). Mirrors the existing `select.away_mode` ("Smart Away" / "Off Only") with a more automation-friendly surface.
 
 ### Verified (no code change needed)
 - **Puck V2 ⇄ Room availability**: Room climate entities derive availability from `current-temperature-c` directly and perform no puck lookups — unaffected by the puck/puck2 relationship key distinction.
 - **Long-term statistics**: all measurement sensors already carry `state_class = MEASUREMENT` and typed `native_unit_of_measurement` constants — HA long-term statistics and graphing are enabled automatically.
+- **Puck V2 availability gaps**: all Puck V2 select/switch/number entities already guard optional attributes (`locked`, `puck-display-color`, `setpoint-bound-low/high`, `temperature-offset-override-c`) with `.get()` checks and properly mark themselves unavailable when those attributes are absent.
 
 ---
 

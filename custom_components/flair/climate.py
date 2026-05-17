@@ -28,6 +28,7 @@ from homeassistant.const import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.unit_system import METRIC_SYSTEM
@@ -496,7 +497,6 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         super().__init__(coordinator)
         self.hvac_id = hvac_id
         self.structure_id = structure_id
-        self.missing_puck_warning = False
 
     @property
     def hvac_data(self) -> HVACUnit:
@@ -829,25 +829,30 @@ class HVAC(CoordinatorEntity, ClimateEntity):
 
     @property
     def available(self) -> bool:
-        """Return true if associated puck is available."""
-        
+        """Return true if associated puck is available.
+
+        Surfaces missing-puck state via the Home Assistant repairs/issue
+        registry so the user gets an actionable UI nudge rather than a
+        log-only warning.
+        """
+
+        issue_id = f"hvac_no_puck_{self.hvac_data.id}"
         if self.puck_data is None:
-            if not self.missing_puck_warning:
-                LOGGER.warning(
-                    f'No puck is associated with Flair HVAC unit {self.hvac_data.attributes["name"]}. '
-                    f'The HVAC climate entity will not be available until a puck has been associated with it.'
-                )
-                # Set to true to prevent logging warning more than once
-                self.missing_puck_warning = True
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="hvac_no_puck",
+                translation_placeholders={
+                    "hvac_name": self.hvac_data.attributes["name"],
+                },
+            )
             return False
 
-        # Reset missing puck warning back to false in case warning has been
-        # sent before and puck has been associated since
-        self.missing_puck_warning = False
-        if not self.puck_data.attributes['inactive']:
-            return True
-        else:
-            return False
+        ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+        return not self.puck_data.attributes['inactive']
 
     async def async_turn_off(self) -> None:
         """Turn IR HVAC unit off."""
