@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.0b5] - 2026-05-17
+
+### Fixed
+- **HVAC units now reflect Off state when structure is off in auto mode** (`climate.py`): when the system mode is Auto and the structure is set to Off (`structure-heat-cool-mode` = `float`), individual HVAC unit climate entities were stuck showing their last cached mode (e.g. Heat) along with a misleading hvac_action icon. The `hvac_mode`, `hvac_modes`, and `hvac_action` properties now honor the structure-level off state, matching what the Flair app displays.
+
+---
+
 ## [0.1.0b4] - 2026-05-17
 
 ### Added
