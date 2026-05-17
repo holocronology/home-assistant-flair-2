@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **Resilient Puck V2 fetching** (`coordinator.py`): narrowed the previous broad `except Exception` around the `puck2s` and `current-reading` fetches to `FlairError` / `asyncio.TimeoutError`, with `FlairAuthError` now correctly routed to reauth. On transient failures the coordinator retains the previous successful puck2 data and current readings instead of resetting them to empty, so Puck V2 entities no longer flicker to unavailable on a single API hiccup. Warning logs now include the exception type, structure name, and how many cached devices were retained.
+
+---
+
 ## [0.1.0b2] - 2026-05-06
 
 ### Fixed
