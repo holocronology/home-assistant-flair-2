@@ -652,7 +652,6 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         return self.structure_data.attributes['mode']
 
     @property
-    @property
     def hvac_mode(self) -> HVACMode:
         """Return the current hvac_mode."""
 

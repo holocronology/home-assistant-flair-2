@@ -6,6 +6,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.0b6] - 2026-05-18
+
+### Fixed
+- **All HVAC entities marked Unavailable** (`climate.py`): the `0.1.0b5` structure-off fix accidentally stacked a duplicate `@property` decorator on `HVAC.hvac_mode`, causing every HVAC entity's `state` to raise `TypeError: 'property' object is not callable` and Home Assistant to mark them unavailable. Decorator removed; HVAC entities are restored.
+
+---
+
 ## [0.1.0b5] - 2026-05-17
 
 ### Fixed
