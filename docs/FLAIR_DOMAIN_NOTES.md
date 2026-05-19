@@ -187,23 +187,67 @@ A diagnostics dump should always include the full `relationships` block for ever
 
 ## 6. Puck Attributes
 
-Common to V1 and V2 (V2 adds a few):
+Confirmed by direct observation against a real Flair account (a mix of V1
+and V2 pucks). The values land in **two distinct responses** — the list
+response and the `current-reading` sub-resource — and the split is not what
+you'd guess from the field names alone.
 
-- `current-temperature-c` (also Celsius is the storage unit even when the user prefers Fahrenheit)
-- `current-humidity`
-- `current-light` (lux-ish)
-- `voltage`
-- `rssi`
-- `pressure`
-- `inactive` (boolean — Flair has decided this puck is offline/asleep)
-- `connected` (binary connection status)
-- `puck-display-color` (V2: `"Black"` / `"White"`)
-- `temperature-scale` (V2: `"F"` / `"C"` / `"K"`)
-- `setpoint-bound-low` / `setpoint-bound-high` (V2: per-puck setpoint guardrails)
-- `temperature-offset-override-c` (V2: per-puck calibration)
-- `locked` (V2: hardware lock state)
+### 6.1 Where each value actually lives
 
-**Important:** Many V2 attributes are optional — they're only present on devices that support that feature. Always guard reads with the equivalent of `.get()` / null-check, and treat the attribute being absent as "the entity doesn't apply, mark unavailable."
+**From the list response** (`GET /api/structures/{id}/pucks` or `…/puck2s`,
+read off `data[i].attributes`):
+
+- `current-temperature-c` — Celsius regardless of user's preferred display unit
+- `current-humidity` — percent
+- `voltage` — raw volts
+- `current-rssi` — **list response uses the `current-rssi` key**, not `rssi`. For
+  V2 this can be null and is unreliable; use `sub-ghz-rssi` from
+  current-reading instead.
+- `inactive` — boolean, Flair has decided this puck is offline
+- V2-only: `puck-display-color`, `temperature-scale`, `setpoint-bound-low`,
+  `setpoint-bound-high`, `temperature-offset-override-c`, `locked`
+
+**From the current-reading sub-resource** (`GET /api/pucks/{id}/current-reading`
+or `…/puck2s/{id}/current-reading`, read off `data.attributes`):
+
+- V1: `light` (must be scaled `× 2` to get lux per HA's formula `(raw/100)*200`),
+  `room-pressure` (kPa, may be absent on older V1 hardware)
+- V2: `sub-ghz-rssi` (the bridge radio — use this as the RSSI source for V2),
+  `connected-gateway-name` (paired bridge), plus HVAC IR-signaling
+  diagnostics (see §6.3)
+- Both: `system-voltage`, `humidity`, `room-temperature-c` — redundant with
+  the list response values, present here for freshness
+
+### 6.2 V1 vs V2 hardware differences
+
+V1 and V2 are different hardware classes, not just versions of the same
+device:
+
+- **V1** has a light sensor (`light`) and an air-pressure sensor
+  (`room-pressure`). It does *not* transmit IR.
+- **V2** has *neither* light nor pressure sensors. It *does* transmit IR to
+  paired mini-split HVAC units, and its current-reading carries the IR
+  signaling state (mode, fan speed, set-point, power, error).
+
+A driver that exposes `IlluminanceMeasurement` and `PressureMeasurement`
+on V2 will leave those capabilities permanently unpopulated — better to
+omit them on V2 entirely.
+
+### 6.3 V2 HVAC fields in current-reading are diagnostic, not authoritative
+
+The V2's current-reading includes `mode-status`, `fan-speed-status`,
+`power-status`, `ir-device-set-point`, `error`, etc. **These describe what
+the puck is currently transmitting** to its paired IR target, not the
+authoritative state of any HVAC unit. The controllable HVAC entity is a
+separate `hvac-units` resource paired to the puck (§4). Surface HVAC
+controls on the HVAC Unit driver, not on the V2 Puck driver — even though
+the V2 is the device physically signaling IR.
+
+### 6.4 V2 optional attributes
+
+Many V2-only fields are optional per device and only present on hardware
+that supports the feature. Always null-check and treat absence as "this
+feature doesn't apply on this device" rather than reporting an error.
 
 ---
 
