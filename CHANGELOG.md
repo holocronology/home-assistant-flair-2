@@ -6,6 +6,26 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.0] - 2026-05-19
+
+First stable release. All features introduced and refined across the b1–b6 beta cycle are considered production-ready.
+
+### Summary of changes since upstream baseline (0.2.4)
+
+- **Puck V2 support** — full entity coverage (sensor, binary_sensor, switch, select, number) for Puck V2 devices via the `puck2s` relationship key, which the upstream `flairaio` library does not fetch
+- **HVAC puck fallback** — resolves Puck V1 via `relationships['puck']`, falling back to `relationships['puck2']` for Puck V2-linked mini-splits
+- **Resilient Puck V2 fetching** — narrowed exception handling, reauth on auth failure, retains previous data on transient errors
+- **Options flow** — scan interval (15–600 s) and API timeout (5–120 s) are user-configurable via Settings → Integrations → Flair → Configure
+- **Set-point controller awareness** — when the set-point controller is a third-party Thermostat, the temperature slider is hidden and write attempts raise a clear `HomeAssistantError` instead of silently failing
+- **HVAC structure-off display** — HVAC units correctly show Off (not their last cached mode) when the structure is set to Off in auto mode
+- **Diagnostics** — full structure/device dump available via Settings → Devices & Services → Flair → Download Diagnostics; OAuth credentials auto-redacted
+- **Repairs integration** — HVAC units with no associated Puck surface an actionable item in Settings → Repairs, clearing automatically once a Puck is linked
+- **Smart Away switch** — `switch.<structure>_smart_away` exposes Smart Away mode as an on/off toggle for presence automations
+- **Migration fallthrough fix** — version 1 migration block now correctly returns before executing the version 2 block
+- **`hacs.json` fix** — removed `zip_release: true` / `filename: flair.zip` which required a GitHub Release artifact that does not exist on this fork
+
+---
+
 ## [0.1.0b6] - 2026-05-18
 
 ### Fixed
