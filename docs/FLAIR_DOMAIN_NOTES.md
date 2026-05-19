@@ -90,14 +90,23 @@ When the controller is "Thermostat":
 - Any attempt to set a structure setpoint via the API in this state is a no-op or error.
 - A good platform integration should **hide** the setpoint control surface in this mode (and explain why), not silently drop the write.
 
-### 3.4 `structure-away-mode` — Away mode
+### 3.4 `structure-away-mode` — Away mode policy
 
 Values (from `AWAY_MODES`): `"Smart Away"` | `"Off Only"`
 
 - `"Smart Away"` — Flair uses occupancy signals (geofence, schedule, etc.) to automatically enter Away.
 - `"Off Only"` — Away can only be entered manually.
 
-Useful as an on/off toggle for presence automations. Mirror the `home-away-mode` attribute (`"Home"` / `"Away"`) for the actual presence state.
+Useful as an on/off toggle for presence automations.
+
+### 3.5 Home/Away state and its setter — two separate attributes
+
+This trips people up — verified against the real API and the HA `select.py`:
+
+- **`home` (boolean)** is the *actual presence state*. `true` → Home, `false` → Away. This is the field to read for "is the house in Home or Away right now".
+- **`home-away-mode` (enum)** is the *setter source*, despite the misleading name. Values are `"Manual"` | `"Third Party Home Away"` | `"Flair Autohome Autoaway"`, mapped via `HOME_AWAY_SET_BY` to friendly labels `"Manual"` | `"Thermostat"` | `"Flair App Geolocation"`. This controls *who is allowed to change* the home/away state, not what the state currently is.
+
+The Hubitat driver exposes `homeAway` (from `home`) and `homeAwaySetBy` (from `home-away-mode`) to keep this distinction visible.
 
 ---
 
