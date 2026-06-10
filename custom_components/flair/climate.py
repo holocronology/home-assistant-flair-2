@@ -514,7 +514,7 @@ class HVAC(CoordinatorEntity, ClimateEntity):
     def puck_data(self) -> Puck:
         """Handle coordinator puck data."""
 
-        puck_rel = self.hvac_data.relationships['puck']['data']
+        puck_rel = self.hvac_data.relationships.get('puck', {}).get('data')
         if puck_rel is not None:
             puck_id = puck_rel['id']
             pucks = self.coordinator.data.structures[self.structure_id].pucks

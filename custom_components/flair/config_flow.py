@@ -81,8 +81,6 @@ class FlairConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 if self.entry.version == 1:
                     self.entry.version = 2.1
-                    self.entry.unique_id = client_id
-                    self.hass.config_entries._async_schedule_save()
 
                 self.hass.config_entries.async_update_entry(
                     self.entry,
@@ -91,6 +89,7 @@ class FlairConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_CLIENT_ID: client_id,
                         CONF_CLIENT_SECRET: client_secret,
                     },
+                    unique_id=client_id,
                 )
 
                 await self.hass.config_entries.async_reload(self.entry.entry_id)

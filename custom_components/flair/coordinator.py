@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import timedelta
-import json
+import logging
 
 from flairaio import FlairClient
 from flairaio.exceptions import FlairAuthError, FlairError
@@ -57,13 +57,18 @@ class FlairDataUpdateCoordinator(DataUpdateCoordinator):
 
         try:
             data = await self.client.get_flair_data()
-            nl = '\n'
-            LOGGER.debug(f'Found the following Flair structures/devices: {nl}{json.dumps(data, default=vars, indent=4)}')
-            for structure_id, structure in data.structures.items():
+            if LOGGER.isEnabledFor(logging.DEBUG):
                 LOGGER.debug(
-                    f'Structure "{structure.attributes["name"]}" relationship keys: '
-                    f'{list(structure.relationships.keys())}'
+                    'Found %d Flair structure(s): %s',
+                    len(data.structures),
+                    [s.attributes['name'] for s in data.structures.values()],
                 )
+                for structure in data.structures.values():
+                    LOGGER.debug(
+                        'Structure "%s" relationship keys: %s',
+                        structure.attributes['name'],
+                        list(structure.relationships.keys()),
+                    )
         except FlairAuthError as error:
             raise ConfigEntryAuthFailed(error) from error
         except FlairError as error:

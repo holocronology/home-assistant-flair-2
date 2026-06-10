@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from flairaio.model import Room, Structure
+from flairaio.model import HVACUnit, Puck, Room, Structure
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
@@ -326,11 +326,23 @@ class HVACUnitControlButton(CoordinatorEntity, ButtonEntity):
         return self.coordinator.data.structures[self.structure_id]
 
     @property
-    def puck_data(self) -> Puck:
+    def puck_data(self) -> Puck | None:
         """Handle coordinator puck data."""
 
-        puck_id = self.hvac_data.relationships['puck']['data']['id']
-        return self.coordinator.data.structures[self.structure_id].pucks[puck_id]
+        puck_rel = self.hvac_data.relationships.get('puck', {}).get('data')
+        if puck_rel is not None:
+            puck_id = puck_rel['id']
+            pucks = self.coordinator.data.structures[self.structure_id].pucks
+            if puck_id in pucks:
+                return pucks[puck_id]
+
+        puck2_rel = self.hvac_data.relationships.get('puck2', {}).get('data')
+        if puck2_rel is not None:
+            puck_id = puck2_rel['id']
+            puck2s = getattr(self.coordinator.data.structures[self.structure_id], 'puck2s', {})
+            return puck2s.get(puck_id)
+
+        return None
 
     @property
     def device_info(self) -> dict[str, Any]:
@@ -372,10 +384,9 @@ class HVACUnitControlButton(CoordinatorEntity, ButtonEntity):
     def available(self) -> bool:
         """Return true if associated puck is available."""
 
-        if not self.puck_data.attributes['inactive']:
-            return True
-        else:
+        if self.puck_data is None:
             return False
+        return not self.puck_data.attributes['inactive']
 
     async def async_press(self) -> None:
         """Handle the button press."""

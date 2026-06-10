@@ -1208,7 +1208,7 @@ class LastButtonPressed(CoordinatorEntity, SensorEntity):
     def puck_data(self) -> Puck:
         """Handle coordinator puck data."""
 
-        puck_rel = self.hvac_data.relationships['puck']['data']
+        puck_rel = self.hvac_data.relationships.get('puck', {}).get('data')
         if puck_rel is not None:
             puck_id = puck_rel['id']
             pucks = self.coordinator.data.structures[self.structure_id].pucks
@@ -1260,7 +1260,7 @@ class LastButtonPressed(CoordinatorEntity, SensorEntity):
         return 'mdi:hvac'
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> str:
         """Return last button pressed."""
 
         last_pressed = self.hvac_data.attributes['button-presses']
@@ -1273,10 +1273,9 @@ class LastButtonPressed(CoordinatorEntity, SensorEntity):
     def available(self) -> bool:
         """Return true if associated puck is available."""
 
-        if not self.puck_data.attributes['inactive']:
-            return True
-        else:
+        if self.puck_data is None:
             return False
+        return not self.puck_data.attributes['inactive']
 
 
 class BridgeRSSI(CoordinatorEntity, SensorEntity):

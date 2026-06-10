@@ -26,5 +26,23 @@
                 "title": "Znova sa overte pomocou poverení Flair OAuth 2.0"
             }
         }
+    },
+    "issues": {
+        "hvac_no_puck": {
+            "title": "HVAC unit \"{hvac_name}\" has no associated Puck",
+            "description": "The Flair HVAC unit \"{hvac_name}\" is not linked to a Puck (V1 or V2). The HVAC climate entity will remain unavailable until you associate a Puck with it in the Flair app. Once linked, this issue will clear automatically on the next update."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Flair options",
+                "description": "Tune how often Home Assistant polls the Flair cloud API and how long each request is allowed to take.",
+                "data": {
+                    "scan_interval": "Scan interval (seconds)",
+                    "timeout": "API timeout (seconds)"
+                }
+            }
+        }
     }
 }

@@ -1165,6 +1165,7 @@ class PuckTempScale(CoordinatorEntity, SelectEntity):
         ha_to_flair = TEMP_SCALE_TO_FLAIR.get(option)
         attributes = self.set_attributes(ha_to_flair)
         await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
+        self.structure_data.attributes['temperature-scale'] = ha_to_flair
         self.puck_data.attributes['temperature-scale'] = ha_to_flair
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
@@ -1364,6 +1365,7 @@ class Puck2TempScale(CoordinatorEntity, SelectEntity):
         ha_to_flair = TEMP_SCALE_TO_FLAIR.get(option)
         attributes = self.set_attributes(ha_to_flair)
         await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
+        self.structure_data.attributes['temperature-scale'] = ha_to_flair
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 

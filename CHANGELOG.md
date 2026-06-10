@@ -6,6 +6,27 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.1] - 2026-06-10
+
+Bugfix release following a full-project code review. No new features.
+
+### Fixed
+- **HVAC control buttons crashed for Puck V2-linked units** (`button.py`): `HVACUnitControlButton.puck_data` accessed the `puck` relationship directly with no `puck2` fallback — the same bug fixed in `climate.py`/`sensor.py` back in 0.1.0b2, at a third site that was missed. The puck lookup now uses the identical V1→V2 fallback pattern, and `available` correctly reports unavailable when no puck is linked at all.
+- **`Last button pressed` sensor crashed when an HVAC unit has no puck** (`sensor.py`): `available` dereferenced `puck_data` without a `None` guard. Also hardened the puck relationship lookup against a missing `puck` key and corrected the `native_value` type hint (`str`, not `float`).
+- **Temperature scale selects didn't update immediately** (`select.py`): both `PuckTempScale` and `Puck2TempScale` now optimistically update the structure's `temperature-scale` attribute (which `current_option` actually reads) before writing state, so the UI reflects the change without waiting for the next poll.
+- **Full data dump serialized on every poll** (`coordinator.py`): the debug log serialized the entire Flair data tree with `json.dumps` inside an f-string, paying the serialization cost on every update even with debug logging disabled. Replaced with lazy, summary-level debug logs (structure names and relationship keys).
+- **Private Home Assistant API usage in reauth** (`config_flow.py`): the v1 entry migration called `config_entries._async_schedule_save()`; `unique_id` is now passed through the public `async_update_entry` instead.
+- **`util.py` cleanup**: replaced the deprecated `async_timeout` package with `asyncio.timeout`; re-raise `FlairAuthError` with a bare `raise` (preserving the traceback); added messages to `NoUserError`/`NoStructuresError`; fixed a docstring copy-pasted from an unrelated integration.
+- **Hardened HVAC puck lookup** (`climate.py`): the `puck` relationship key access now uses `.get()` so a structure payload without the key cannot raise `KeyError`.
+
+### Added
+- **Translation completeness**: the `issues` and `repairs`/`options` strings added during the beta cycle are now present in `strings.json` (the canonical source) and in the `hr`/`sk` locale files (English fallback text pending native translations).
+
+### Verified (no code change needed)
+- **Vent tilt snapping to 50%** (`cover.py`): flagged by review as a bug, but it is intentional — Flair vent hardware only supports 0/50/100% positions, as documented in the README.
+
+---
+
 ## [0.1.0] - 2026-05-19
 
 First stable release. All features introduced and refined across the b1–b6 beta cycle are considered production-ready.

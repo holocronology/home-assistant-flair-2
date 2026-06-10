@@ -1,7 +1,7 @@
 """Utilities for Flair Integration"""
 from __future__ import annotations
 
-import async_timeout
+import asyncio
 
 from flairaio import FlairClient
 from flairaio.exceptions import FlairAuthError
@@ -24,12 +24,12 @@ async def async_validate_api(hass: HomeAssistant, client_id: str, client_secret:
     )
 
     try:
-        async with async_timeout.timeout(TIMEOUT):
+        async with asyncio.timeout(TIMEOUT):
             users_query = await client.get_users()
             structures_query = await client.get_structures()
     except FlairAuthError as err:
         LOGGER.error(f'Could not authenticate on Flair servers: {err}')
-        raise FlairAuthError(err)
+        raise
     except FLAIR_ERRORS as err:
         LOGGER.error(f'Failed to get information from Flair servers: {err}')
         raise ConnectionError from err
@@ -39,10 +39,10 @@ async def async_validate_api(hass: HomeAssistant, client_id: str, client_secret:
 
     if not users:
         LOGGER.error("Could not retrieve any users from Flair servers")
-        raise NoUserError
+        raise NoUserError("No users found on Flair account")
     if not structures:
         LOGGER.error('Could not retrieve any structures from Flair servers')
-        raise NoStructuresError
+        raise NoStructuresError("No structures found on Flair account")
     return True
 
 
@@ -51,4 +51,4 @@ class NoUserError(Exception):
 
 
 class NoStructuresError(Exception):
-    """ No Litter Boxes from PurrSong API. """
+    """ No Structures from Flair API. """
