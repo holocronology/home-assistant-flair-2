@@ -108,6 +108,42 @@ This trips people up — verified against the real API and the HA `select.py`:
 
 The Hubitat driver exposes `homeAway` (from `home`) and `homeAwaySetBy` (from `home-away-mode`) to keep this distinction visible.
 
+### 3.6 "Room Sense" / Home Evenness — per-room and per-HVAC-unit setpoints are live algorithm output
+
+Verified against the real API with "Room Sense" (an advanced Flair app feature)
+enabled, structure in `auto` mode, `set-point-mode` = "Home Evenness For
+Active Rooms Flair Setpoint":
+
+- There is conceptually **one user-facing target temperature**: the
+  structure-level `set-point-temperature-c`. The Flair app's single
+  thermostat dial controls this, and it is the value users think of as "the
+  setpoint."
+- `room.set-point-c` and `hvac-units.temperature` are **not** independent
+  user-set targets in this mode. They are live outputs of Flair's Home
+  Evenness algorithm, which continuously adjusts each room/unit's commanded
+  temperature to balance the house toward the structure target based on that
+  room's measured conditions.
+- **These values change without any user action.** Observed in the field:
+  structure target = 77°F, but an HVAC unit was independently commanded to
+  72°F by Flair to correct "undercooling" in that room — a 5°F divergence
+  that had nothing to do with a unit conversion bug.
+- The Flair app's room cards are **inconsistent** about which value they
+  display — some rooms show the structure target, others show the live
+  algorithm-adjusted value. Don't treat "what a room card shows" as ground
+  truth when comparing `set-point-c`/`temperature` to a platform's reading of
+  the same field.
+- **Implication for a port:** exposing a writable "target temperature" on
+  per-room or per-HVAC-unit entities while the structure is in `auto` +
+  Flair-App set-point-mode is misleading — any value the user writes will
+  likely be overwritten by the algorithm within one or two poll cycles.
+  Consider treating these as read-only telemetry in that mode (mirroring how
+  the Thermostat-controller case already hides `TARGET_TEMPERATURE` on the
+  Structure entity), with the Structure entity as the sole write surface for
+  temperature while Auto/Home-Evenness is active. Manual mode is unaffected —
+  per-unit setpoints are real user-set values there.
+- This is **not a bug** — it's Flair's intended Home Evenness / Room Sense
+  behavior, just undocumented in the public API reference.
+
 ---
 
 ## 4. HVAC Unit Behavior
