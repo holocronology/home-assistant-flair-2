@@ -33,6 +33,14 @@ Structure
 
 The Flair API is **JSON:API**-style. Every entity has `type`, `id`, `attributes`, and `relationships`. Relationships are how parent/child links are expressed and are the source of multiple gotchas (see §5).
 
+**Every entity carries its own structure back-reference.** Confirmed against real multi-structure API payloads: a Room, HVAC unit, Puck, Vent, etc. all carry `relationships.structure.data.id` pointing at their parent Structure — e.g.
+```json
+"structure": {
+  "data": { "type": "structures", "id": "92292" }
+}
+```
+This is populated on essentially every to-one relationship (only pure `links`-only relationships like `make` lack a `data` block). **A port should scope every structure-nested entity by this field directly, rather than trusting whatever grouping a client library hands back.** The official `flairaio` Python library has a bug (see `coordinator.py`'s `_owned_by_structure` workaround, holocronology/home-assistant-flair-2#3) where its own internal aggregation silently merges every structure's rooms/pucks/vents/HVAC-units/etc. together on multi-structure accounts — the API itself is not at fault, the bug is purely in that one client's accumulation logic. A fresh implementation that always filters/groups by each entity's own `relationships.structure.data.id` sidesteps this class of bug entirely.
+
 ### Type-to-model mapping (from `const.py`)
 
 ```

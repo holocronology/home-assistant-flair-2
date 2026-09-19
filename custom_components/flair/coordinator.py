@@ -28,6 +28,41 @@ from .const import (
 from .model import Puck2
 
 
+# Structure-nested collections affected by a flairaio bug in get_flair_data():
+# the per-entity accumulator dicts are declared once before the loop over
+# structures and the same dict reference is handed to every Structure, so on
+# multi-structure accounts every structure ends up holding every OTHER
+# structure's entities too. See holocronology/home-assistant-flair-2#3.
+STRUCTURE_SCOPED_COLLECTIONS = (
+    'rooms', 'pucks', 'vents', 'bridges', 'thermostats', 'hvac_units', 'zones', 'schedules',
+)
+
+
+def _owned_by_structure(collection: dict, structure_id: str) -> dict:
+    """Filter a structure-nested entity dict down to entities that actually belong to it.
+
+    Each entity carries its own ``relationships.structure.data.id`` back-reference
+    (confirmed against real multi-structure API payloads in issue #3), so the
+    correct scoping can be recovered client-side without waiting on an upstream
+    flairaio fix. Fails open: an entity is only dropped when its relationship
+    data explicitly points at a *different* structure, so a missing/unexpected
+    relationship shape (e.g. an entity type this hasn't been verified against)
+    never drops an entity that actually belongs here.
+    """
+
+    filtered = {}
+    for entity_id, entity in collection.items():
+        relationships = entity.relationships or {}
+        structure_rel = relationships.get('structure') or {}
+        rel_data = structure_rel.get('data')
+        rel_structure_id = rel_data.get('id') if isinstance(rel_data, dict) else None
+
+        if rel_structure_id is None or rel_structure_id == structure_id:
+            filtered[entity_id] = entity
+
+    return filtered
+
+
 class FlairDataUpdateCoordinator(DataUpdateCoordinator):
     """Flair Data Update Coordinator."""
 
@@ -79,6 +114,22 @@ class FlairDataUpdateCoordinator(DataUpdateCoordinator):
         previous_data: FlairData | None = getattr(self, 'data', None)
 
         for structure_id, structure in data.structures.items():
+            for collection_attr in STRUCTURE_SCOPED_COLLECTIONS:
+                collection = getattr(structure, collection_attr, None)
+                if not collection:
+                    continue
+                scoped = _owned_by_structure(collection, structure_id)
+                if len(scoped) != len(collection):
+                    LOGGER.debug(
+                        'Structure "%s" (%s): dropped %d cross-structure %s entry/entries '
+                        '(flairaio get_flair_data scoping workaround, see issue #3)',
+                        structure.attributes.get('name', 'unknown'),
+                        structure_id,
+                        len(collection) - len(scoped),
+                        collection_attr,
+                    )
+                setattr(structure, collection_attr, scoped)
+
             previous_puck2s: dict[str, Puck2] = {}
             if previous_data is not None:
                 prev_structure = previous_data.structures.get(structure_id)

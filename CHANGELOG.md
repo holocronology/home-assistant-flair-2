@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.2] - 2026-09-19
+
+Bugfix release for multi-structure accounts.
+
+### Fixed
+- **Rooms, pucks, vents, HVAC units, bridges, thermostats, zones, and schedules were cross-listed across every structure on multi-structure Flair accounts** (`coordinator.py`), causing entities to bind to the wrong structure — controlling one structure's room/HVAC unit could visibly (in HA only, not on the Flair server) affect a different structure's entities. Root cause is upstream in `flairaio`'s `get_flair_data()`: its per-entity accumulator dicts are declared once before the loop over structures and the same dict reference is reused for every `Structure`, so by the end of the loop every structure holds every other structure's entities too. Worked around client-side in the coordinator by filtering each structure's nested collections down to entities whose own `relationships.structure.data.id` actually matches, before any platform ever sees the data — no changes needed in `climate.py`/`sensor.py`/etc. The filter fails open (keeps an entity when the relationship data is missing or unrecognized) so single-structure accounts, and any entity type this wasn't directly verified against, are unaffected.
+- Thanks to [@ben-einstein](https://github.com/ben-einstein) for the root-cause diagnosis, the upstream fix attempt, and confirming the `relationships.structure.data.id` back-reference against real multi-structure API payloads (#3).
+
+---
+
 ## [0.1.1] - 2026-06-10
 
 Bugfix release following a full-project code review. No new features.
