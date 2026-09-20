@@ -692,15 +692,17 @@ class Schedule(CoordinatorEntity, SelectEntity):
         return 'mdi:calendar'
 
     @property
-    def current_option(self) -> str:
-        """Returns current active schedule."""
+    def current_option(self) -> str | None:
+        """Return the current active schedule when it is available."""
 
-        active_schedule = self.structure_data.attributes['active-schedule-id']
+        active_schedule = self.structure_data.attributes.get(
+            "active-schedule-id"
+        )
 
         if active_schedule is None:
-            return 'No Schedule'
-        else:
-            return self.schedules[active_schedule]
+            return "No Schedule"
+
+        return self.schedules.get(active_schedule)
 
     @property
     def options(self) -> list[str]:
