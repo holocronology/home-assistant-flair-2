@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.3] - 2026-09-20
+
+Bugfix release.
+
+### Fixed
+- **`Active schedule` select entity crashed on every coordinator refresh when Flair reported an `active-schedule-id` not present in the structure's current schedule list** (`select.py`): `Schedule.current_option` indexed `self.schedules[active_schedule]` directly, raising `KeyError` and logging a recurring "Unexpected error updating listener" error. Switched to safe `.get()` lookups on both the structure attribute and the schedule dict; the entity now returns `None` (no current selection) instead of raising when the reported schedule is stale or missing.
+- Thanks to [@jmping](https://github.com/jmping) for the fix (#4).
+
+---
+
 ## [0.1.2] - 2026-09-19
 
 Bugfix release for multi-structure accounts.
