@@ -93,16 +93,6 @@ class HomeAwayClearHold(CoordinatorEntity, ButtonEntity):
         return True
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
@@ -167,16 +157,6 @@ class HomeAwayRevert(CoordinatorEntity, ButtonEntity):
         """Indicate that entity has name defined."""
 
         return True
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:
@@ -268,16 +248,6 @@ class RoomClearHold(CoordinatorEntity, ButtonEntity):
         """Indicate that entity has name defined."""
 
         return True
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:

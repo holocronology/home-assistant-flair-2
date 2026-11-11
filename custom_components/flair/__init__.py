@@ -3,12 +3,35 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN, LOGGER, PLATFORMS
 from .coordinator import FlairDataUpdateCoordinator
 from .util import NoStructuresError, NoUserError, async_validate_api
+
+
+@callback
+def _async_reenable_integration_disabled(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Re-enable entities disabled by the old Manual mode registration rule.
+
+    Entities first created while the structure was in Manual mode were
+    registered as disabled by the integration and never re-enabled. Vent
+    reported state sensors are intentionally disabled by default and are skipped.
+    """
+
+    registry = er.async_get(hass)
+    count = 0
+    for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if reg_entry.disabled_by is not er.RegistryEntryDisabler.INTEGRATION:
+            continue
+        if reg_entry.unique_id.endswith('_reported_state'):
+            continue
+        registry.async_update_entity(reg_entry.entity_id, disabled_by=None)
+        count += 1
+    if count:
+        LOGGER.info("Re-enabled %d Flair entities disabled by the integration", count)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -20,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(async_update_options))
 
+    _async_reenable_integration_disabled(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True

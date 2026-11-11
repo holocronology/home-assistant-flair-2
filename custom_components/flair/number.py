@@ -189,16 +189,6 @@ class TempAwayMin(CoordinatorEntity, NumberEntity):
         return 1.0
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Return true only if the set point controller
         is set to Flair App, away mode is set to Smart Away,
@@ -359,16 +349,6 @@ class TempAwayMax(CoordinatorEntity, NumberEntity):
         """Return temp stepping by 1 celsius or fahrenheit."""
 
         return 1.0
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:

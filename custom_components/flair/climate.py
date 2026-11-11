@@ -226,16 +226,6 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
         return features
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
@@ -421,16 +411,6 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
             | ClimateEntityFeature.TURN_OFF
             | ClimateEntityFeature.TURN_ON
         )
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:
@@ -679,6 +659,9 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         if self.structure_mode == 'auto':
             if self.structure_data.attributes.get('structure-heat-cool-mode') == 'float':
                 return HVACMode.OFF
+            # Flair can power a unit off in auto mode; don't show its old mode.
+            if not self.is_on:
+                return HVACMode.OFF
 
         mode = self.hvac_data.attributes['mode']
 
@@ -698,6 +681,9 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         if self.structure_mode == 'auto':
             # When the structure is off, only Off is valid.
             if self.structure_data.attributes.get('structure-heat-cool-mode') == 'float':
+                return [HVACMode.OFF]
+            # A unit Flair powered off is read-only Off as well.
+            if not self.is_on:
                 return [HVACMode.OFF]
             # Can't change modes when structure mode is auto otherwise —
             # only return the last mode it was in.

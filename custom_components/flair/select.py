@@ -235,16 +235,6 @@ class HomeAwayMode(CoordinatorEntity, SelectEntity):
         return HOME_AWAY_MODE
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
@@ -362,16 +352,6 @@ class HomeAwaySetBy(CoordinatorEntity, SelectEntity):
             return ['Manual', 'Flair App Geolocation']
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
@@ -472,16 +452,6 @@ class DefaultHoldDuration(CoordinatorEntity, SelectEntity):
         """Return list of all the available default hold durations."""
 
         return list(DEFAULT_HOLD_DURATION.values())
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:
@@ -587,16 +557,6 @@ class SetPointController(CoordinatorEntity, SelectEntity):
             return list(SET_POINT_CONTROLLER.values())
         else:
             return ['Flair App']
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:
@@ -711,16 +671,6 @@ class Schedule(CoordinatorEntity, SelectEntity):
         return list(self.schedules.values())
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
@@ -822,16 +772,6 @@ class AwayMode(CoordinatorEntity, SelectEntity):
         """Return list of all the available away modes."""
 
         return AWAY_MODES
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:
@@ -937,16 +877,6 @@ class RoomActivity(CoordinatorEntity, SelectEntity):
         """Return list of all the available activity status states."""
 
         return ROOM_MODES
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        system_mode = self.structure_data.attributes['mode']
-        if system_mode == 'manual':
-            return False
-        else:
-            return True
 
     @property
     def available(self) -> bool:

@@ -464,12 +464,6 @@ class SmartAway(CoordinatorEntity, SwitchEntity):
         return self.structure_data.attributes.get('structure-away-mode') == 'Smart Away'
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Disable entity if system mode is set to manual on initial registration."""
-
-        return self.structure_data.attributes.get('mode') != 'manual'
-
-    @property
     def available(self) -> bool:
         """Marks entity as unavailable if system mode is set to Manual."""
 
