@@ -6,6 +6,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.5] - 2026-11-11
+
+Bugfix release.
+
+### Fixed
+- **Entities stayed disabled forever if they were first created while System mode was Manual** (#7). 17 entity types (room activity selects, the Room and Structure climate entities, hold/away buttons, selects, numbers and sensors, and the Smart Away switch) were registered as disabled when the house happened to be in Manual mode at install or upgrade time. Home Assistant only applies that once, so they never came back. They are now enabled by default and still show as unavailable while in Manual mode. On startup, entities the integration disabled under the old rule are re-enabled automatically; entities you disabled yourself are never touched. The vent "reported state" sensor stays disabled by default, as intended. Home Assistant reloads the integration once, about 30 seconds after the first startup that re-enables anything.
+- **HVAC units Flair had powered off still showed their old mode in Auto** (#6). In Auto mode, a mini-split that Flair turned off (e.g. by Room Sense, or because its room is inactive) kept showing Heat/Cool with only the action showing off. It now shows **Off** and offers only Off (read-only), the same as when the whole house is off. Manual mode is unchanged.
+
+---
+
 ## [0.1.4] - 2026-11-11
 
 Bugfix release. Verified on hardware (HA 2026.11.1, structure in Auto, "Off Only" away mode) via a 0.1.4b1 beta: turning one room off from Apple Home set only that room inactive and powered off only its mini-split; turning it back on restored both; the structure and every other room were unchanged throughout.
