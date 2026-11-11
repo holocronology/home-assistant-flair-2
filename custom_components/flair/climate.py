@@ -376,17 +376,23 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
         """Return the current hvac_mode."""
 
         mode = self.structure_data.attributes['structure-heat-cool-mode']
-        hvac_mode = None
-        if mode in ROOM_HVAC_MAP:
-            hvac_mode = ROOM_HVAC_MAP[mode]
-        return hvac_mode
+        if mode == 'float':
+            return HVACMode.OFF
+        if not self.room_data.attributes.get('active', True):
+            return HVACMode.OFF
+        return ROOM_HVAC_MAP.get(mode)
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
-        """Return supported modes."""
+        """Return supported modes.
 
-        supported_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.HEAT_COOL]
-        return supported_modes
+        A room is only on or off. Heat vs cool is chosen on the structure.
+        """
+
+        mode = self.structure_data.attributes['structure-heat-cool-mode']
+        if mode == 'float' or mode not in ROOM_HVAC_MAP:
+            return [HVACMode.OFF]
+        return [HVACMode.OFF, ROOM_HVAC_MAP[mode]]
 
     @property
     def current_temperature(self) -> float:
@@ -410,7 +416,11 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
     def supported_features(self) -> int:
         """Return supported features."""
 
-        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_OFF
+        return (
+            ClimateEntityFeature.TARGET_TEMPERATURE
+            | ClimateEntityFeature.TURN_OFF
+            | ClimateEntityFeature.TURN_ON
+        )
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -435,14 +445,24 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
             return False
 
     async def async_turn_off(self) -> None:
-        """Set structure mode to off."""
-        
-        attributes = self.set_attributes('float', 'hvac_mode')
+        """Turn this room off."""
 
-        await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
-        self.structure_data.attributes['structure-heat-cool-mode'] = 'float'
+        await self._set_active(False)
+
+    async def async_turn_on(self) -> None:
+        """Turn this room on."""
+
+        await self._set_active(True)
+
+    async def _set_active(self, active: bool) -> None:
+        """Set room active state."""
+
+        attributes = self.set_attributes(active, 'active')
+
+        await self.coordinator.client.update('rooms', self.room_data.id, attributes=attributes, relationships={})
+        self.room_data.attributes['active'] = active
         self.async_write_ha_state()
-        return await self.coordinator.async_request_refresh()  
+        return await self.coordinator.async_request_refresh()
 
     async def async_set_temperature(self, **kwargs) -> None:
         """Set new target temperature."""
@@ -453,24 +473,22 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
         if temp is not None:
             await self.coordinator.client.update('rooms', self.room_data.id, attributes=attributes, relationships={})
             self.room_data.attributes['set-point-c'] = temp
+            self.room_data.attributes['active'] = True
             self.async_write_ha_state()
             return await self.coordinator.async_request_refresh()
         else:
             LOGGER.error(f'Missing valid arguments for set_temperature in {kwargs}')
 
     async def async_set_hvac_mode(self, hvac_mode) -> None:
-        """Set new target hvac mode."""
+        """Set room on or off. Never changes the structure mode."""
 
-        flair_mode = ROOM_HVAC_MAP_TO_FLAIR.get(hvac_mode)
-        attributes = self.set_attributes(flair_mode, 'hvac_mode')
-
-        await self.coordinator.client.update('structures', self.structure_data.id, attributes=attributes, relationships={})
-        self.structure_data.attributes['structure-heat-cool-mode'] = flair_mode
-        self.async_write_ha_state()
-        return await self.coordinator.async_request_refresh()
+        if hvac_mode == HVACMode.OFF:
+            await self.async_turn_off()
+        else:
+            await self.async_turn_on()
 
     @staticmethod
-    def set_attributes(value: float | str, mode: str) -> dict[str, Any]:
+    def set_attributes(value: float | bool, mode: str) -> dict[str, Any]:
         """Creates attribute dict that is needed
         by the flairaio update method.
         """
@@ -482,7 +500,7 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
             }
         else:
             attributes = {
-                'structure-heat-cool-mode': value,
+                'active': value,
             }
 
         return attributes

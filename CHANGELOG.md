@@ -6,6 +6,19 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.4b1] - 2026-11-11
+
+Beta. Pending a hardware check that Flair turns off a room's mini-split when the room is set inactive in Auto mode.
+
+### Fixed
+- **Turning off one Room climate entity turned off the whole house** (`climate.py`, #5). `RoomTemp.async_turn_off` and `async_set_hvac_mode` wrote `structure-heat-cool-mode` to the structure, so Off on any room tile (for example from Apple Home via the HomeKit bridge) set the entire structure to Off. Room tiles now change only their own room's `active` flag:
+  - **Off** marks that room inactive; **On** (or selecting the offered mode) reactivates it. The structure is never written.
+  - A room tile offers only **Off** and the structure's current mode. Heat vs. cool is chosen on the Structure entity, so no room tile can change the whole house.
+  - A room shows **Off** when it is inactive or when the structure is off; otherwise it shows the structure's mode.
+  - Setting a room's temperature also reactivates it (Flair already did this; the entity now reflects it immediately).
+
+---
+
 ## [0.1.3] - 2026-09-20
 
 Bugfix release.
