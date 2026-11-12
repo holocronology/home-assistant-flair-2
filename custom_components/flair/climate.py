@@ -31,6 +31,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util.unit_conversion import TemperatureConverter
 from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import (
@@ -788,62 +789,49 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         return self.room_data.attributes['current-humidity']
 
     @property
-    def supported_features(self) -> int:
+    def supported_features(self) -> ClimateEntityFeature:
         """HVAC unit supported features."""
 
-        if self.swing_available and self.available_fan_speeds:
-            # Determine if Flair structure is set to auto mode.
-            if self.structure_mode == 'auto':
-                if self.is_on:
-                    # Only allow setting swing and fan if HVAC is in dry or fan only mode.
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.FAN_MODE
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.FAN_MODE
-                else:
-                    return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.FAN_MODE
-            if self.structure_mode == 'manual':
-                if self.is_on:
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                else:
-                    return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
+        features = ClimateEntityFeature(0)
 
-        # If only swing is available.
+        # In auto mode Flair's algorithm sets the unit's temperature, so no
+        # setpoint (and no power control) is offered.
+        if self.structure_mode == 'auto':
+            if self.swing_available:
+                features |= ClimateEntityFeature.SWING_MODE
+            if self.available_fan_speeds:
+                features |= ClimateEntityFeature.FAN_MODE
+            return features
+
+        if not self.is_on:
+            return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
+
+        features = ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
         if self.swing_available:
-            if self.structure_mode == 'auto':
-                if self.is_on:
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.SWING_MODE
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.SWING_MODE
-            if self.structure_mode == 'manual':
-                if self.is_on:
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.SWING_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                else:
-                    return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
-
-        # If only fan speeds are available.
+            features |= ClimateEntityFeature.SWING_MODE
         if self.available_fan_speeds:
-            if self.structure_mode == 'auto':
-                if self.is_on:
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.FAN_MODE
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
-            if self.structure_mode == 'manual':
-                if self.is_on:
-                    if self.hvac_mode in (HVACMode.DRY, HVACMode.FAN_ONLY):
-                        return ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                    else:
-                        return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
-                else:
-                    return ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TURN_ON
+            features |= ClimateEntityFeature.FAN_MODE
+        if self.hvac_mode not in (HVACMode.DRY, HVACMode.FAN_ONLY):
+            features |= ClimateEntityFeature.TARGET_TEMPERATURE
+        return features
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose the temperature Flair commands the unit to in auto mode."""
+
+        if self.structure_mode != 'auto':
+            return None
+
+        temp = self.hvac_data.attributes.get('temperature')
+        if temp is None:
+            return None
+
+        converted = TemperatureConverter.convert(
+            float(temp),
+            self.temperature_unit,
+            self.hass.config.units.temperature_unit,
+        )
+        return {'commanded_temperature': round(converted, 1)}
 
     @property
     def available(self) -> bool:
@@ -894,6 +882,9 @@ class HVAC(CoordinatorEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs) -> None:
         """Set new target temperature."""
 
+        if self.structure_mode == 'auto':
+            raise HomeAssistantError(f'{self.hvac_data.attributes["name"]}: in Auto mode Flair sets this unit\'s temperature. Set the room\'s temperature instead.')
+
         if ATTR_HVAC_MODE in kwargs:
             hvac_mode = kwargs[ATTR_HVAC_MODE]
             if hvac_mode in [HVACMode.OFF, HVACMode.FAN_ONLY, HVACMode.DRY]:
@@ -902,30 +893,6 @@ class HVAC(CoordinatorEntity, ClimateEntity):
                 await self.async_set_hvac_mode(hvac_mode)
 
         temp = kwargs.get(ATTR_TEMPERATURE)
-
-        # Get room ID if in auto mode or HVAC ID if in manual mode.
-        if self.structure_mode == 'auto':
-            auto_mode = True
-            type_id = self.room_data.id
-            type = 'rooms'
-
-            if not self.temperature_unit is UnitOfTemperature.CELSIUS:
-                # Since we are setting the room temp when in auto structure mode, which is always in celsius,
-                # we need to convert the temp to celsius if HVAC unit is not celsius. However, the target temp is read
-                # from the HVAC unit - the temp scale key from the HVAC constraints, used to set the temperature_unit
-                # property, eliminates us from having to do this conversion when setting the HVAC 'temperature' attribute.
-                converted = ((temp - 32) * (5/9))
-                attributes = self.set_attributes('temp', converted, auto_mode)
-                await self.coordinator.client.update(type, type_id, attributes=attributes, relationships={})
-                self.hvac_data.attributes['temperature'] = temp
-                self.async_write_ha_state()
-                await self.coordinator.async_request_refresh()
-            else:
-                attributes = self.set_attributes('temp', temp, auto_mode)
-                await self.coordinator.client.update(type, type_id, attributes=attributes, relationships={})
-                self.hvac_data.attributes['temperature'] = temp
-                self.async_write_ha_state()
-                await self.coordinator.async_request_refresh()
 
         if self.structure_mode == 'manual':
             if not self.is_on:
