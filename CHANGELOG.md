@@ -6,6 +6,21 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.6] - 2026-11-12
+
+### Changed
+- **No setpoint control on HVAC units in Auto mode** (#2). In Auto, Flair sets each mini-split's temperature itself. The HVAC unit entity's slider changed the *room's* setpoint and then jumped back to Flair's value on the next poll. In Auto, HVAC unit entities now:
+  - offer no setpoint control (swing and fan controls stay where the unit supports them);
+  - show the temperature Flair is sending as a read-only `commanded_temperature` attribute, in your Home Assistant units;
+  - reject set-temperature calls (e.g. from automations) with a clear error, without sending anything to Flair.
+
+  Set a room's temperature on its **Room** entity instead; that is unchanged. Manual mode is unchanged. On dashboards, an HVAC unit's thermostat card no longer shows a target temperature while the house is in Auto.
+
+### Fixed
+- The HVAC unit entity's supported features could be empty (`None`) for some units (e.g. swing-only or fan-only units that Flair had powered off in Auto, or units with neither). It now always reports a valid value.
+
+---
+
 ## [0.1.5] - 2026-11-11
 
 Bugfix release.
