@@ -6,6 +6,14 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.9] - 2026-11-14
+
+### Fixed
+- **The integration's options screen didn't open** (the gear on the Flair integration page), failing with "Config flow could not be loaded: 500 Internal Server Error". Home Assistant 2026.11 no longer lets an integration set its options screen's config entry itself. The scan interval and timeout can be changed again.
+- **Re-authenticating a pre-OAuth2 (version 1) setup failed** for the same reason: it changed the entry's version directly. It now goes through Home Assistant's update function.
+
+---
+
 ## [0.1.8] - 2026-11-14
 
 **Requires Home Assistant 2026.11 or newer.** HACS will not offer this update on older versions.
