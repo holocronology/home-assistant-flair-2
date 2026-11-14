@@ -13,6 +13,8 @@ Custom Home Assistant component for controlling and monitoring Flair structures,
 
 ## Prior To Installation
 
+Requires **Home Assistant 2026.11 or newer** (from v0.1.8).
+
 You will need **OAuth 2.0** `client_id` and `client_secret` credentials.
 
 To retrieve your credentials:
@@ -61,20 +63,20 @@ Each Flair mini-split, puck (V1 and V2), room, structure, and vent is represente
 
 | Entity | Entity Type | Additional Comments |
 |---|---|---|
-| `Active Schedule` | `Select` | All schedules created in the Flair app appear here. Select "No Schedule" to disable. Disabled by default if system mode is manual. |
-| `Away Mode` | `Select` | See Flair's [Away Settings](https://support.flair.co/hc/en-us/articles/360041109111-Away-Settings) docs. Disabled by default if system mode is manual. |
-| `Away temperature maximum` | `Number` | Only available when set point controller is set to "Flair App". Disabled by default if system mode is manual. |
-| `Away temperature minimum` | `Number` | Only available when set point controller is set to "Flair App". Disabled by default if system mode is manual. |
-| `Clear home/away hold` | `Button` | Removes the time-period hold on home/away mode without reverting the mode itself. Disabled by default if system mode is manual. |
-| `Default hold duration` | `Select` | Disabled by default if system mode is manual. |
-| `Home/Away` | `Select` | See Flair's [Home/Away Mode](https://support.flair.co/hc/en-us/articles/360044922952-Home-Away-Mode) docs. Disabled by default if system mode is manual. |
-| `Home/Away holding until` | `Sensor` | Shows time remaining on a manual home/away hold. Only available when a hold is active. Disabled by default if system mode is manual. |
-| `Home/Away mode set by` | `Select` | Options: Manual, Flair App Geolocation, or Thermostat (if linked). Disabled by default if system mode is manual. |
+| `Active Schedule` | `Select` | All schedules created in the Flair app appear here. Select "No Schedule" to disable. Unavailable while system mode is Manual. |
+| `Away Mode` | `Select` | See Flair's [Away Settings](https://support.flair.co/hc/en-us/articles/360041109111-Away-Settings) docs. Unavailable while system mode is Manual. |
+| `Away temperature maximum` | `Number` | Only available when set point controller is set to "Flair App". Unavailable while system mode is Manual. |
+| `Away temperature minimum` | `Number` | Only available when set point controller is set to "Flair App". Unavailable while system mode is Manual. |
+| `Clear home/away hold` | `Button` | Removes the time-period hold on home/away mode without reverting the mode itself. Unavailable while system mode is Manual. |
+| `Default hold duration` | `Select` | Unavailable while system mode is Manual. |
+| `Home/Away` | `Select` | See Flair's [Home/Away Mode](https://support.flair.co/hc/en-us/articles/360044922952-Home-Away-Mode) docs. Unavailable while system mode is Manual. |
+| `Home/Away holding until` | `Sensor` | Shows time remaining on a manual home/away hold. Only available when a hold is active. Unavailable while system mode is Manual. |
+| `Home/Away mode set by` | `Select` | Options: Manual, Flair App Geolocation, or Thermostat (if linked). Unavailable while system mode is Manual. |
 | `Lock IR device modes` | `Switch` | Keeps heat/cool mode in sync across all IR devices. Only available if IR devices are associated with your account. |
 | `Network repair mode` | `Switch` | Temporarily allows pucks and vents to connect to different gateways. Turns off automatically after 30 minutes. |
-| `Reverse home/away hold` | `Button` | Removes the current hold and reverts home/away mode back to its previous state. Disabled by default if system mode is manual. |
-| `Set point controller` | `Select` | Options: Flair App, or Thermostat (if linked). Disabled by default if system mode is manual. |
-| `Structure` | `Climate` | Sets Flair Structure mode and set point. Target temperature only available when set point controller is "Flair App". Disabled by default if system mode is manual. |
+| `Reverse home/away hold` | `Button` | Removes the current hold and reverts home/away mode back to its previous state. Unavailable while system mode is Manual. |
+| `Set point controller` | `Select` | Options: Flair App, or Thermostat (if linked). Unavailable while system mode is Manual. |
+| `Structure` | `Climate` | Sets Flair Structure mode and set point. Target temperature only available when set point controller is "Flair App". Unavailable while system mode is Manual. |
 | `System Mode` | `Select` | See Flair's [Auto](https://support.flair.co/hc/en-us/articles/360042659392-System-Auto) and [Manual](https://support.flair.co/hc/en-us/articles/360043099291-System-Manual) mode docs. |
 
 ## Bridge
@@ -156,10 +158,10 @@ To control vents in Flair Rooms that have a temperature sensor, the System setti
 
 | Entity | Entity Type | Additional Comments |
 |---|---|---|
-| `Activity Status` | `Select` | Set room to Active or Inactive. Disabled by default if system mode is manual. |
-| `Clear hold` | `Button` | Clears the temperature hold and reverts to the scheduled set point. Disabled by default if system mode is manual. |
-| `Room` | `Climate` | Change temperature set point per room. Changing HVAC mode propagates to all rooms (mode is set at the Structure level). Disabled by default if system mode is manual. |
-| `Temperature holding until` | `Sensor` | Time remaining on a manual temperature hold. Only available when a hold is active. Disabled by default if system mode is manual. |
+| `Activity Status` | `Select` | Set room to Active or Inactive. Unavailable while system mode is Manual. |
+| `Clear hold` | `Button` | Clears the temperature hold and reverts to the scheduled set point. Unavailable while system mode is Manual. |
+| `Room` | `Climate` | Change temperature set point per room. Turning it off sets only that room Inactive; turning it on sets it Active again. Heat vs. cool is chosen on the Structure entity. Attributes `hold_active` and `hold_until` show whether the room's temperature is on hold. Unavailable while system mode is Manual. |
+| `Temperature holding until` | `Sensor` | Time remaining on a manual temperature hold. Only available when a hold is active. Unavailable while system mode is Manual. |
 
 Changing a room's temperature will hold for the duration set in Flair app under **Home Settings → System Settings → Default Hold Duration**, or as configured via the `Default hold duration` entity in Home Assistant.
 
@@ -169,7 +171,7 @@ Changing a room's temperature will hold for the duration set in Flair app under 
 |---|---|---|
 | `HVAC unit` | `Climate` | See notes below. |
 
-> **Auto Mode:** Only fan speed and swing can be controlled. Temperature set point is controlled at the room level.
+> **Auto Mode:** Only fan speed and swing can be controlled. Temperature set point is controlled at the room level; the temperature Flair is sending the unit is shown as the read-only `commanded_temperature` attribute. A unit Flair has powered off shows `Off`.
 >
 > **Manual Mode:** Full control including HVAC mode. Setting mode to `Off` turns the unit off.
 

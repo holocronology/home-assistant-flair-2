@@ -6,6 +6,18 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.8] - 2026-11-14
+
+**Requires Home Assistant 2026.11 or newer.** HACS will not offer this update on older versions.
+
+### Changed
+- **Climate entities use Home Assistant's new `native_*` temperature properties** (#8). Home Assistant 2026.11 renamed them and will drop the old names in 2027.11; the deprecation warnings in the log are gone. Nothing shown in Home Assistant changes. The new names don't exist on older Home Assistant, so the minimum version is now 2026.11.0.
+
+### Fixed
+- **Room hold state lagged by a few seconds.** After setting a room's temperature, `hold_active` only turned true on the next refresh; after pressing **Clear hold**, the room kept showing the hold and the old setpoint until the next refresh. Both now update in the same state change as the action.
+
+---
+
 ## [0.1.7] - 2026-11-14
 
 ### Added
