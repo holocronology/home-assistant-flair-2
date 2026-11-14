@@ -404,6 +404,26 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
         return self.room_data.attributes['current-humidity']
 
     @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose whether the room's temperature is on hold.
+
+        An open-ended hold ("until next scheduled event") has no
+        hold-until time, so any of the three hold fields counts.
+        """
+
+        attributes = self.room_data.attributes
+        hold_until = attributes.get('hold-until')
+        hold_active = bool(
+            attributes.get('set-point-manual')
+            or attributes.get('hold-until-schedule-event')
+            or hold_until
+        )
+        return {
+            'hold_active': hold_active,
+            'hold_until': hold_until or None,
+        }
+
+    @property
     def supported_features(self) -> int:
         """Return supported features."""
 

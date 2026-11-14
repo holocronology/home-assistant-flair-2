@@ -301,6 +301,17 @@ feature doesn't apply on this device" rather than reporting an error.
 - Room mode is `"Active"` or `"Inactive"`. Inactive rooms are excluded from auto-mode balancing.
 - Room temperature/humidity comes from `current-temperature-c` / `current-humidity-c` — **not** by looking up the puck. This is convenient: room sensors work even if the puck linkage is muddled.
 - Room setpoint is `set-point-c`.
+- **Room temperature holds** (verified live, Auto mode). Setting a room's temperature creates a hold. Three fields describe it:
+
+  | Field | Open-ended hold ("until next scheduled event") | No hold / after clearing |
+  |---|---|---|
+  | `set-point-manual` | `true` | `false` |
+  | `hold-until-schedule-event` | `true` | `false` |
+  | `hold-until` | `null` | `null` |
+
+  A timed hold (default hold duration set to a fixed time) is expected to set `hold-until` to a timestamp instead. **`hold-until` alone is not a reliable hold signal**, because it is `null` during an open-ended hold. Treat a room as held if any of the three fields is set.
+- Clearing a hold: write `{"hold-until": null, "hold-until-schedule-event": false}` to the room. Flair reverts `set-point-c` to the structure setpoint and clears `set-point-manual`, the same as clearing in the Flair app.
+- A room's `hold-reason` ("Set by <user>", "PuckActivity") tracks changes to its **Active** state, not temperature holds, so don't use it to detect a temperature hold.
 
 ---
 
