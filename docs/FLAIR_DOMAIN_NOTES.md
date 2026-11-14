@@ -207,6 +207,19 @@ When the user changes an HVAC unit's mode:
 - In **Auto** mode: writes typically go to the **room** (not the HVAC unit), because Flair's auto algorithm wants to know the intent at the room level. Test against real hardware.
 - Setting mode to **Off** in Manual mode writes `power: "Off"` to the unit.
 
+### 4.6 No "idle" signal for mini-splits (investigated 2026-11, Auto mode, heating)
+
+Two snapshots of the full structure data 25 minutes apart, compared with measured outdoor-unit power:
+
+- Every unit reported `power: On`, `mode: Heat` at both snapshots, while the outdoor units' power draw repeatedly fell to standby levels in between. Nothing in the unit, room, puck or structure attributes changed with it.
+- Puck V2 `power-status` / `mode-status` stayed `ON` / `HEAT` too. They describe what the puck last sent, not what the unit is doing.
+- Room `room-conclusion-mode` did not track demand: it stayed the same while a room crossed its setpoint, and read `COOL` in several rooms of a house in heat mode. Room `heat-cool-mode` read `COOL` in every room.
+- The only field that moved was the commanded temperature (`hvac-units.temperature`, mirrored in Puck V2 `ir-device-set-point`), which Flair adjusts to steer the room.
+
+This fits how the hardware works: the puck controls the unit by one-way IR, and the unit's own thermostat decides when its compressor runs. Flair has no feedback from the unit. **Do not derive an idle state from these fields.** The gap between commanded and room temperature is not reliable either, since the unit measures temperature at its own sensor, not the puck's.
+
+Not yet examined: related records the client library does not fetch (`hvac-unit-states` via the unit's `current-state`, the room's `current-conclusions` / `room-states`, the puck's `current-state`). Given one-way IR they are unlikely to hold real running state.
+
 ---
 
 ## 5. The Puck V2 Relationship Gotcha (read carefully)
