@@ -141,7 +141,7 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
         return True
 
     @property
-    def temperature_unit(self) -> UnitOfTemperature:
+    def native_temperature_unit(self) -> UnitOfTemperature:
         """Return celsius or fahrenheit."""
 
         if self.hass.config.units is METRIC_SYSTEM:
@@ -150,7 +150,7 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
             return UnitOfTemperature.FAHRENHEIT
 
     @property
-    def target_temperature(self) -> float:
+    def native_target_temperature(self) -> float:
         """Return the temperature currently set to be reached.
 
         Due to how Home Assistant handles rounding,
@@ -166,7 +166,7 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
             return round(((value * (9/5)) + 32), 0)
 
     @property
-    def target_temperature_low(self) -> float:
+    def native_target_temperature_low(self) -> float:
         """Return minimum allowed set point in celsius or fahrenheit."""
 
         if self.hass.config.units is METRIC_SYSTEM:
@@ -175,7 +175,7 @@ class StructureClimate(CoordinatorEntity, ClimateEntity):
             return 50.0
 
     @property
-    def target_temperature_high(self) -> float:
+    def native_target_temperature_high(self) -> float:
         """Return maximum allowed set point in celsius or fahrenheit."""
 
         if self.hass.config.units is METRIC_SYSTEM:
@@ -357,7 +357,7 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
         return 'mdi:door-open'
 
     @property
-    def temperature_unit(self) -> UnitOfTemperature:
+    def native_temperature_unit(self) -> UnitOfTemperature:
         """Return the unit of measurement."""
 
         return UnitOfTemperature.CELSIUS
@@ -386,13 +386,13 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
         return [HVACMode.OFF, ROOM_HVAC_MAP[mode]]
 
     @property
-    def current_temperature(self) -> float:
+    def native_current_temperature(self) -> float:
         """Return the current temperature."""
 
         return self.room_data.attributes['current-temperature-c']
 
     @property
-    def target_temperature(self) -> float:
+    def native_target_temperature(self) -> float:
         """Return the temperature currently set to be reached."""
 
         return self.room_data.attributes['set-point-c']
@@ -594,7 +594,7 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         return 'mdi:hvac'
 
     @property
-    def temperature_unit(self) -> UnitOfTemperature:
+    def native_temperature_unit(self) -> UnitOfTemperature:
         """Return temp scale unit of measurement."""
 
         if 'temperature-scale' in self.hvac_data.attributes['constraints']:
@@ -788,18 +788,18 @@ class HVAC(CoordinatorEntity, ClimateEntity):
         return swing_modes
 
     @property
-    def current_temperature(self) -> float:
+    def native_current_temperature(self) -> float:
         """Return the current temperature of the room HVAC unit is in."""
 
         temp = self.room_data.attributes['current-temperature-c']
 
-        if self.temperature_unit is UnitOfTemperature.CELSIUS:
+        if self.native_temperature_unit is UnitOfTemperature.CELSIUS:
             return temp
         else:
             return round(((temp * (9/5)) + 32), 1)
 
     @property
-    def target_temperature(self) -> float:
+    def native_target_temperature(self) -> float:
         """Return the temperature currently set to be reached by the HVAC unit."""
 
         return float(self.hvac_data.attributes['temperature'])
@@ -850,7 +850,7 @@ class HVAC(CoordinatorEntity, ClimateEntity):
 
         converted = TemperatureConverter.convert(
             float(temp),
-            self.temperature_unit,
+            self.native_temperature_unit,
             self.hass.config.units.temperature_unit,
         )
         return {'commanded_temperature': round(converted, 1)}
