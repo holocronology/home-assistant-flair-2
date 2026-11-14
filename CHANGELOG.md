@@ -6,6 +6,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.7] - 2026-11-14
+
+### Added
+- **Room temperature hold state** on Room climate entities (`climate.<room>_room`), as two read-only attributes:
+  - `hold_active`: `true` while the room's temperature is on hold, including open-ended holds ("until next scheduled event"). Previously these looked like "no hold", because the "Temperature holding until" sensor is unavailable when a hold has no end time.
+  - `hold_until`: the hold's end time for a timed hold, otherwise empty.
+
+  A hold starts when you set a room's temperature and ends when you press the room's **Clear hold** button. Nothing else changes: room on/off, setpoints, the Structure and HVAC unit entities, and the "Temperature holding until" sensor behave as before.
+
+---
+
 ## [0.1.6] - 2026-11-12
 
 ### Changed
