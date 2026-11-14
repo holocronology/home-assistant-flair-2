@@ -475,6 +475,8 @@ class RoomTemp(CoordinatorEntity, ClimateEntity):
             await self.coordinator.client.update('rooms', self.room_data.id, attributes=attributes, relationships={})
             self.room_data.attributes['set-point-c'] = temp
             self.room_data.attributes['active'] = True
+            # Setting a room temperature starts a hold in Flair.
+            self.room_data.attributes['set-point-manual'] = True
             self.async_write_ha_state()
             return await self.coordinator.async_request_refresh()
         else:

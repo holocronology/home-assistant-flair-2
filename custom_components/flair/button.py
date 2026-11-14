@@ -270,7 +270,13 @@ class RoomClearHold(CoordinatorEntity, ButtonEntity):
         await self.coordinator.client.update('rooms', self.room_data.id, attributes, relationships={})
         self.room_data.attributes['hold-until'] = None
         self.room_data.attributes['hold-until-schedule-event'] = False
-        self.async_write_ha_state()
+        self.room_data.attributes['set-point-manual'] = False
+        # Flair reverts a cleared room to the structure set point.
+        structure_set_point = self.structure_data.attributes.get('set-point-temperature-c')
+        if structure_set_point is not None:
+            self.room_data.attributes['set-point-c'] = structure_set_point
+        # The room's climate entity shows the hold, so update it right away.
+        self.coordinator.async_update_listeners()
         await self.coordinator.async_request_refresh()
 
 
